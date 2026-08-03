@@ -1,5 +1,3 @@
-
-
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -28,27 +26,22 @@ const allowedPatterns = [
   /^https:\/\/sales-crm-.*\.vercel\.app$/,
   /^https:\/\/vrn-sales-.*\.vercel\.app$/,
   /^https:\/\/vrn-backend-.*\.vercel\.app$/,
-  /^https:\/\/.*-namanvrn\.vercel\.app$/,
-  /^https:\/\/.*-namanvrns-projects\.vercel\.app$/,
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
-    
-    // Check exact matches
+
     if (allowedOrigins.includes(origin)) {
-      return callback(null, origin);
+      return callback(null, true);
     }
-    
-    // Check pattern matches
+
     if (allowedPatterns.some((p) => p.test(origin))) {
-      return callback(null, origin);
+      return callback(null, true);
     }
-    
+
     console.warn(`⛔ CORS blocked origin: ${origin}`);
-    return callback(new Error(`CORS: Origin ${origin} not allowed`), false);
+    return callback(null, false);
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -56,27 +49,54 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
-// Apply CORS middleware
+// Apply CORS middleware (yeh preflight bhi automatic handle karta hai)
 app.use(cors(corsOptions));
-
-// Handle preflight requests explicitly
-app.options("*", cors(corsOptions));
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ============================================
-// Request Logger (helpful for debugging)
+// Request Logger
 // ============================================
 app.use((req, res, next) => {
-  console.log(`📥 ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  console.log(`📥 ${req.method} ${req.path} - Origin: ${req.headers.origin || "none"}`);
   next();
 });
 
 // ============================================
-// ✅ ASYNC middleware — attach retry-enabled clients
+// Health Check (koi middleware nahi - simple)
 // ============================================
-app.use(async (req, res, next) => {
+app.get("/", (req, res) => {
+  res.json({
+    message: "🚀 Backend Server is Running!",
+    status: "OK",
+    version: "1.0.2",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Server is healthy",
+    origin: req.headers.origin || "no-origin",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/api/cors-test", (req, res) => {
+  res.json({
+    success: true,
+    message: "CORS is working!",
+    yourOrigin: req.headers.origin || "no-origin",
+    allowedOrigins: allowedOrigins,
+  });
+});
+
+// ============================================
+// ✅ Google Clients middleware (only for API routes)
+// ============================================
+const attachGoogleClients = async (req, res, next) => {
   try {
     const [sheets, drive] = await Promise.all([
       getRetryableSheets(),
@@ -94,7 +114,7 @@ app.use(async (req, res, next) => {
       message: err.message,
     });
   }
-});
+};
 
 // ============================================
 // Routes
@@ -121,62 +141,32 @@ const fullKittingRoutes = require("./routes/meetings/fullKittingRoutes");
 const meetingsSubRoutes = require("./routes/meetings/meetingsSubRoutes");
 const agreementRoutes = require("./routes/meetings/agreementRoutes");
 
-app.use("/api/auth", authRoutes);
-app.use("/api/leads", protect, nbdinRoutes);
-app.use("/api/field-visit", protect, nbdFieldVisitRoutes);
-app.use("/api/after-field-visit", protect, nbdAfterFieldVisitRoutes);
-app.use("/api/meeting-nbd", protect, nbdMeetingRoutes);
+// Apply Google clients middleware to all API routes
+app.use("/api/auth", attachGoogleClients, authRoutes);
+app.use("/api/leads", attachGoogleClients, protect, nbdinRoutes);
+app.use("/api/field-visit", attachGoogleClients, protect, nbdFieldVisitRoutes);
+app.use("/api/after-field-visit", attachGoogleClients, protect, nbdAfterFieldVisitRoutes);
+app.use("/api/meeting-nbd", attachGoogleClients, protect, nbdMeetingRoutes);
 
-app.use("/api/cp/followup", cpFollowupRoutes);
-app.use("/api/cp/field-visit", cpFieldVisitRoutes);
-app.use("/api/cp/after-field-visit", cpAfterFieldVisitRoutes);
-app.use("/api/cp/meeting", cpMeetingRoutes);
-app.use("/api/cp/booking", cpBookingRoutes);
-app.use("/api/cp/lead-form", cpLeadFormRoutes);
+app.use("/api/cp/followup", attachGoogleClients, cpFollowupRoutes);
+app.use("/api/cp/field-visit", attachGoogleClients, cpFieldVisitRoutes);
+app.use("/api/cp/after-field-visit", attachGoogleClients, cpAfterFieldVisitRoutes);
+app.use("/api/cp/meeting", attachGoogleClients, cpMeetingRoutes);
+app.use("/api/cp/booking", attachGoogleClients, cpBookingRoutes);
+app.use("/api/cp/lead-form", attachGoogleClients, cpLeadFormRoutes);
 
-app.use("/cp", cpContactUpdateRoutes);
-app.use("/api/leads", protect, leadSearchRoutes);
-app.use("/api/cnp", protect, cnpRoutes);
-app.use("/api/call-to-broker", protect, callToBrokerRoutes);
-app.use("/api/meetings/full-kitting", fullKittingRoutes);
-app.use("/api/meetings/meetings-sub", meetingsSubRoutes);
-app.use("/api/meetings/agreement", agreementRoutes);
+app.use("/cp", attachGoogleClients, cpContactUpdateRoutes);
+app.use("/api/leads", attachGoogleClients, protect, leadSearchRoutes);
+app.use("/api/cnp", attachGoogleClients, protect, cnpRoutes);
+app.use("/api/call-to-broker", attachGoogleClients, protect, callToBrokerRoutes);
+app.use("/api/meetings/full-kitting", attachGoogleClients, fullKittingRoutes);
+app.use("/api/meetings/meetings-sub", attachGoogleClients, meetingsSubRoutes);
+app.use("/api/meetings/agreement", attachGoogleClients, agreementRoutes);
 
 // ============================================
-// Health & Warmup
+// Warmup endpoint
 // ============================================
-app.get("/", (req, res) => {
-  res.json({
-    message: "🚀 Backend Server is Running!",
-    status: "OK",
-    version: "1.0.1",
-    timestamp: new Date().toISOString(),
-    allowedOrigins: allowedOrigins,
-  });
-});
-
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    message: "Server is healthy",
-    origin: req.headers.origin || "no-origin",
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// 🔥 CORS Test endpoint
-app.get("/api/cors-test", (req, res) => {
-  res.json({
-    success: true,
-    message: "CORS is working!",
-    yourOrigin: req.headers.origin || "no-origin",
-    allowedOrigins: allowedOrigins,
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// 🔥 Warmup endpoint — touches Google API to keep connection alive
-app.get("/api/warmup", async (req, res) => {
+app.get("/api/warmup", attachGoogleClients, async (req, res) => {
   const t = Date.now();
   try {
     await req.sheets.spreadsheets.get({
@@ -203,9 +193,8 @@ app.get("/api/warmup", async (req, res) => {
 // ============================================
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err.message);
-  
-  // CORS Error
-  if (err.message && err.message.startsWith("CORS:")) {
+
+  if (err.message && err.message.includes("CORS")) {
     return res.status(403).json({
       success: false,
       error: "CORS Error",
@@ -213,7 +202,7 @@ app.use((err, req, res, next) => {
       yourOrigin: req.headers.origin,
     });
   }
-  
+
   res.status(500).json({
     success: false,
     error: "Internal Server Error",
