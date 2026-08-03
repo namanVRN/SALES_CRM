@@ -17,6 +17,7 @@
 //   "http://localhost:5173",
 //   "http://localhost:3000",
 //   "https://vrn-sales.vercel.app",
+//   "https://sales-crm-three-gamma.vercel.app",
 // ];
 
 // const allowedPatterns = [
@@ -181,6 +182,9 @@
 // module.exports = app;
 
 
+
+
+
 require("dotenv").config();
 const express = require("express");
 
@@ -193,35 +197,15 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ============================================
-// CORS - Manual Implementation (100% Reliable)
+// CORS - Allow ALL origins (Simple)
 // ============================================
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://localhost:5000",
-  "https://sales-crm-three-gamma.vercel.app",
-  "https://sales-crm-vrn.vercel.app",
-  "https://vrn-sales.vercel.app",
-];
-
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  res.setHeader("Access-Control-Allow-Headers", "*");
+  res.setHeader("Access-Control-Max-Age", "0");
   
-  const isAllowed = 
-    !origin || 
-    allowedOrigins.includes(origin) ||
-    /^https:\/\/sales-crm-.*\.vercel\.app$/.test(origin) ||
-    /^https:\/\/sales-.*-vrn-inc-s-projects\.vercel\.app$/.test(origin) ||
-    /^https:\/\/vrn-sales-.*\.vercel\.app$/.test(origin);
-  
-  if (isAllowed && origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-    res.setHeader("Access-Control-Max-Age", "86400");
-  }
-  
+  // Handle preflight
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -244,9 +228,9 @@ app.get("/", (req, res) => {
   res.json({
     message: "🚀 Backend Server is Running!",
     status: "OK",
-    version: "1.0.7",
+    version: "1.0.9",
     timestamp: new Date().toISOString(),
-    allowedOrigins: allowedOrigins,
+    cors: "* (all origins allowed)",
   });
 });
 
@@ -254,8 +238,7 @@ app.get("/api/health", (req, res) => {
   res.json({
     success: true,
     message: "Server is healthy",
-    origin: req.headers.origin || "no-origin",
-    version: "1.0.7",
+    version: "1.0.9",
     timestamp: new Date().toISOString(),
   });
 });
@@ -263,10 +246,9 @@ app.get("/api/health", (req, res) => {
 app.get("/api/cors-test", (req, res) => {
   res.json({
     success: true,
-    message: "CORS is working!",
+    message: "CORS is working - all origins allowed!",
     yourOrigin: req.headers.origin || "no-origin",
-    allowedOrigins: allowedOrigins,
-    version: "1.0.7",
+    version: "1.0.9",
   });
 });
 
@@ -391,7 +373,7 @@ app.use(function (req, res) {
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
-    console.log(`📋 Allowed Origins:`, allowedOrigins);
+    console.log(`🌐 CORS: All origins allowed (*)`);
   });
 }
 
