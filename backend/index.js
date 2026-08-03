@@ -24,6 +24,7 @@ const allowedOrigins = [
 
 const allowedPatterns = [
   /^https:\/\/sales-crm-.*\.vercel\.app$/,
+  /^https:\/\/sales-.*-vrn-inc-s-projects\.vercel\.app$/,
   /^https:\/\/vrn-sales-.*\.vercel\.app$/,
   /^https:\/\/vrn-backend-.*\.vercel\.app$/,
 ];
@@ -49,7 +50,7 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
-// Apply CORS middleware (yeh preflight bhi automatic handle karta hai)
+// Apply CORS middleware (preflight automatic handle hoti hai)
 app.use(cors(corsOptions));
 
 app.use(express.json({ limit: "10mb" }));
@@ -64,13 +65,13 @@ app.use((req, res, next) => {
 });
 
 // ============================================
-// Health Check (koi middleware nahi - simple)
+// Health Check Routes (No middleware)
 // ============================================
 app.get("/", (req, res) => {
   res.json({
     message: "🚀 Backend Server is Running!",
     status: "OK",
-    version: "1.0.2",
+    version: "1.0.3",
     timestamp: new Date().toISOString(),
   });
 });
@@ -94,7 +95,7 @@ app.get("/api/cors-test", (req, res) => {
 });
 
 // ============================================
-// ✅ Google Clients middleware (only for API routes)
+// ✅ Google Clients middleware
 // ============================================
 const attachGoogleClients = async (req, res, next) => {
   try {
@@ -211,7 +212,7 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================
-// 404 Handler
+// 404 Handler (No wildcard - just middleware)
 // ============================================
 app.use((req, res) => {
   res.status(404).json({
