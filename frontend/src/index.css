@@ -1,0 +1,43 @@
+/* Shimmer Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.skeleton-line,
+.skeleton-circle,
+.skeleton-button {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.8s infinite linear;
+  border-radius: 8px;
+}
+
+.skeleton-line {
+  height: 16px;
+}
+
+.skeleton-line.w-100 { width: 100%; }
+.skeleton-line.w-80 { width: 80%; }
+.skeleton-line.w-75 { width: 75%; }
+.skeleton-line.w-70 { width: 70%; }
+.skeleton-line.w-60 { width: 60%; }
+.skeleton-line.w-50 { width: 50%; }
+
+.skeleton-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-button {
+  width: 100px;
+  height: 38px;
+  border-radius: 6px;
+}
+

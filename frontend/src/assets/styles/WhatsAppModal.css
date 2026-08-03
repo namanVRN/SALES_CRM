@@ -1,0 +1,501 @@
+/* ==========================================
+   WHATSAPP MODAL — Green Theme
+   ========================================== */
+
+.wa-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+  animation: waFadeIn 0.2s ease-out;
+  padding: 20px;
+}
+
+@keyframes waFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.wa-modal-container {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+  animation: waSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes waSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===== HEADER ===== */
+.wa-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 26px;
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  color: white;
+}
+
+.wa-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wa-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  backdrop-filter: blur(10px);
+}
+
+.wa-header-text h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.wa-header-text p {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.wa-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.wa-close-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: rotate(90deg);
+}
+
+/* ===== BODY ===== */
+.wa-modal-body {
+  padding: 20px 26px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* LEAD CARD */
+.wa-lead-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 18px;
+}
+
+.wa-lead-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #10b981;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.wa-lead-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-lead-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e1b4b;
+  line-height: 1.2;
+}
+
+.wa-lead-phone {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wa-lead-phone i {
+  color: #10b981;
+  font-size: 12px;
+}
+
+/* SECTION */
+.wa-section {
+  margin-bottom: 18px;
+}
+
+.wa-section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.wa-section-label.wa-custom-label {
+  color: #6b7280;
+  letter-spacing: 0.3px;
+}
+
+.wa-section-label.wa-custom-label i {
+  color: #10b981;
+  font-size: 14px;
+}
+
+.wa-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-editable-tag {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #10b981;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* SELECT DROPDOWN */
+.wa-select-wrapper {
+  position: relative;
+}
+
+.wa-select-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #10b981;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.wa-select-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.wa-select {
+  width: 100%;
+  padding: 12px 40px 12px 44px;
+  border: 2px solid #10b981;
+  border-radius: 10px;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e1b4b;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.wa-select:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* PROJECT BADGE */
+.wa-project-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-radius: 50px;
+  margin-top: 12px;
+  animation: waFadeIn 0.3s ease-out;
+}
+
+.wa-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: waPulse 1.5s infinite;
+}
+
+@keyframes waPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.3); }
+}
+
+.wa-badge-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.wa-badge-type {
+  font-size: 11px;
+  font-weight: 600;
+  color: #059669;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: capitalize;
+}
+
+/* ASSET CHIPS */
+.wa-asset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.wa-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.wa-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.wa-chip-loc {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.wa-chip-lay {
+  background: #e0f2fe;
+  color: #075985;
+  border-color: #7dd3fc;
+}
+
+.wa-chip-bro {
+  background: #fce7f3;
+  color: #9d174d;
+  border-color: #f9a8d4;
+}
+
+.wa-chip-vid {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-color: #c4b5fd;
+}
+
+/* TEXTAREA */
+.wa-preview-textarea,
+.wa-custom-textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1e1b4b;
+  background: #f0fdf4;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s;
+  min-height: 140px;
+}
+
+.wa-custom-textarea {
+  background: #f8fafc;
+  min-height: 100px;
+}
+
+.wa-preview-textarea:focus,
+.wa-custom-textarea:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+  background: #fff;
+}
+
+/* ===== FOOTER ===== */
+.wa-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 26px;
+  border-top: 1px solid #e2e8f0;
+  background: #fafafa;
+}
+
+.wa-btn-cancel {
+  padding: 11px 22px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wa-btn-cancel:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.wa-btn-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);
+}
+
+.wa-btn-send:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(37, 211, 102, 0.45);
+}
+
+.wa-btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.wa-btn-send i {
+  font-size: 16px;
+}
+
+/* ==========================================
+   WA BUTTON IN TABLE (contact cell)
+   ========================================== */
+.wa-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  border: none;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.3);
+  vertical-align: middle;
+}
+
+.wa-icon-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.5);
+}
+
+.wa-icon-btn i {
+  font-size: 13px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 560px) {
+  .wa-modal-container {
+    max-height: 95vh;
+    border-radius: 16px;
+  }
+
+  .wa-modal-header {
+    padding: 18px 20px;
+  }
+
+  .wa-header-text h2 {
+    font-size: 17px;
+  }
+
+  .wa-modal-body {
+    padding: 16px 20px;
+  }
+
+  .wa-modal-footer {
+    padding: 14px 20px;
+  }
+
+  .wa-btn-cancel,
+  .wa-btn-send {
+    padding: 10px 18px;
+    font-size: 13px;
+  }
+}

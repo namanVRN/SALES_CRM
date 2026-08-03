@@ -1,0 +1,984 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchCPCanContactFollowup, updateCPCanContactFollowup } from "../../services/cpApi"; // ← changed import
+import Layout from "../../components/Layout";
+import EditContactInline from "../../components/EditContactInline"
+import SkeletonTable from "../../components/SkeletonTable";
+import "../../assets/styles/TablePages.css";
+import "../../assets/styles/ActionModal.css";
+import { toast } from "react-toastify";
+
+function CPCanContactFollowup() {
+  const queryClient = useQueryClient();
+
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    status: "",
+    fieldVisitDate: "",
+    nextFollowUpDate: "",
+    remarks: "",
+    importantNote: "",
+    pickAndDrop: "No",
+  });
+
+  // Filter State
+  const [filters, setFilters] = useState({
+    plannedDateFrom: "",
+    plannedDateTo: "",
+    customerName: "",
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Fetch data – using CP API now
+  const {
+    data: rows = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["/cp/followup/can-contact/list"],          // ← changed key
+    queryFn: fetchCPCanContactFollowup,             // ← changed function
+    select: (res) => res?.data || res || [],        // more defensive
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // ────────────────────────────────────────────────
+  // URGENT / OVERDUE PLANNED DATE LOGIC (kept same)
+  // ────────────────────────────────────────────────
+  const isPlannedDateUrgent = (plannedDateStr) => {
+    if (!plannedDateStr) return false;
+    const parts = plannedDateStr.split("/");
+    if (parts.length !== 3) return false;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+    const plannedDate = new Date(year, month, day);
+    plannedDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return plannedDate <= today;
+  };
+
+  // Repeating beep when urgent leads exist
+  const filteredRows = rows.filter((row) => {
+    if (filters.customerName) {
+      const customerName = row.customerName?.toLowerCase() || "";
+      const searchTerm = filters.customerName.toLowerCase().trim();
+      if (!customerName.includes(searchTerm)) return false;
+    }
+
+    if (!filters.plannedDateFrom && !filters.plannedDateTo) return true;
+
+    const plannedDate = row.plannedDate;
+    if (!plannedDate) return false;
+
+    const parseDate = (dateStr) => {
+      if (!dateStr) return null;
+      const parts = dateStr.split("/");
+      if (parts.length !== 3) return null;
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      return new Date(year, month, day);
+    };
+
+    const rowDate = parseDate(plannedDate);
+    if (!rowDate) return false;
+
+    const fromDate = filters.plannedDateFrom ? new Date(filters.plannedDateFrom) : null;
+    const toDate = filters.plannedDateTo ? new Date(filters.plannedDateTo) : null;
+
+    const normalizeDate = (date) => {
+      const normalized = new Date(date);
+      normalized.setHours(0, 0, 0, 0);
+      return normalized;
+    };
+
+    const normalizedRowDate = normalizeDate(rowDate);
+    const normalizedFromDate = fromDate ? normalizeDate(fromDate) : null;
+    const normalizedToDate = toDate ? normalizeDate(toDate) : null;
+
+    if (normalizedFromDate && normalizedRowDate < normalizedFromDate) return false;
+    if (normalizedToDate && normalizedRowDate > normalizedToDate) return false;
+
+    return true;
+  });
+
+
+  const isAnyFilterActive = filters.plannedDateFrom || filters.plannedDateTo || filters.customerName;
+
+  // Update mutation – using CP API now
+  const updateMutation = useMutation({
+    mutationFn: updateCPCanContactFollowup,          // ← changed function
+    onSuccess: () => {
+      toast.success("Record updated successfully");
+      queryClient.invalidateQueries(["/cp/followup/can-contact/list"]);
+      handleCloseModal();
+    },
+    onError: (error) => {
+      toast.error("❌ Error: " + (error?.message || "Something went wrong"));
+    },
+  });
+
+  const handleActionClick = (lead) => {
+    setSelectedLead(lead);
+    setFormData({
+      status: "",
+      fieldVisitDate: "",
+      nextFollowUpDate: "",
+      remarks: lead.remarks || "",
+      importantNote: lead.importantNote || "",
+      pickAndDrop: lead.pickAndDrop || "No",
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedLead(null);
+    setFormData({
+      status: "",
+      fieldVisitDate: "",
+      nextFollowUpDate: "",
+      remarks: "",
+      importantNote: "",
+      pickAndDrop: "No",
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (
+      (formData.status === "No conversation" ||
+        formData.status === "Next Follow Up") &&
+      !formData.nextFollowUpDate
+    ) {
+      toast.warning("Please select Next FollowUp Date");
+      return;
+    }
+
+    updateMutation.mutate({
+      // Adjust fields according to what your CP update endpoint actually expects
+      // The fields below are kept same as original — change if backend differs
+      sheetName: selectedLead.sheetName,
+      rowIndex: selectedLead.rowIndex,
+      status: formData.status,
+      fieldVisitDate: formData.fieldVisitDate,
+      nextFollowUpDate: formData.nextFollowUpDate,
+      currentFollowUpCount: selectedLead.followUpCount,
+      remarks: formData.remarks,
+      importantNote: formData.importantNote,
+      pickAndDrop: formData.pickAndDrop,
+    });
+  };
+
+  // ────────────────────────────────────────────────
+  // Rest of the component (filters, table, modal, ...) remains almost identical
+  // Only title / breadcrumbs / header text changed
+  // ────────────────────────────────────────────────
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      plannedDateFrom: "",
+      plannedDateTo: "",
+      customerName: "",
+    });
+  };
+
+  const getStatusBadge = (status) => {
+    const s = status?.toLowerCase() || "";
+    if (s === "pending" || s === "") return <span className="status-tag pending">Pending</span>;
+    if (s === "no conversation") return <span className="status-tag call-again">No Conversation</span>;
+    if (s === "done") return <span className="status-tag done">Done</span>;
+    if (s === "not interested") return <span className="status-tag not-interested">Not Interested</span>;
+    return <span className="status-tag">{status}</span>;
+  };
+
+  const getSourceBadge = (source) => {
+    const s = source?.toLowerCase() || "";
+    if (s.includes("channel") || s.includes("partner") || s.includes("cp")) {
+      return <span className="source-tag channel">Channel Partner</span>;
+    }
+    return <span className="source-tag direct">Direct</span>;
+  };
+
+  const statusOptions = [
+    { value: "Done", label: "Done", icon: "bi-check-circle", color: "#10b981" },
+    { value: "No conversation", label: "No Conversation", icon: "bi-telephone-x", color: "#6366f1" },
+    { value: "Not Interested", label: "Not Interested", icon: "bi-x-circle", color: "#ef4444" },
+    { value: "Next Follow Up", label: "Next Follow Up", icon: "bi-calendar-plus", color: "#f59e0b" },
+  ];
+
+  return (
+    <Layout
+      breadcrumbs={[
+        { name: "CP Follow-up", path: "/cp-followup" },
+        { name: "Can Contact", path: "/cp-followup/can-contact" },
+      ]}
+    >
+      <div className="table-page-container">
+        {/* Background Elements */}
+        <div className="table-page-bg">
+          <div className="table-bg-shape table-bg-shape-1" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}></div>
+          <div className="table-bg-shape table-bg-shape-2" style={{ background: "linear-gradient(135deg, #a855f7, #6366f1)" }}></div>
+        </div>
+
+        {/* Header */}
+        <div className="table-page-header" style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}>
+          <div className="header-content">
+            <div className="header-icon"><i className="bi bi-telephone-outbound-fill"></i></div>
+            <div className="header-text">
+              <h1>CP Can Contact - Follow-up</h1>
+              <p>Follow-up with Channel Partners who can be contacted</p>
+            </div>
+          </div>
+          <div className="header-stats">
+            <div className="stat-box">
+              <span className="stat-number">{filteredRows.length}</span>
+              <span className="stat-label">{isAnyFilterActive ? "Filtered" : "Leads"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Section */}
+        <div className="filter-section">
+          <div className="filter-header">
+            <div className="filter-title">
+              <i className="bi bi-funnel"></i>
+              <span>Filters</span>
+              {isAnyFilterActive && (
+                <span
+                  className="active-filter-badge"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                    color: "#fff",
+                    padding: "2px 8px",
+                    borderRadius: "12px",
+                    fontSize: "11px",
+                    marginLeft: "8px",
+                  }}
+                >
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="filter-controls">
+              <button
+                className="filter-toggle-btn"
+                onClick={() => setShowFilters(!showFilters)}
+                style={{
+                  background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                }}
+              >
+                <i className={`bi bi-chevron-${showFilters ? "up" : "down"}`}></i>
+                {showFilters ? "Hide Filters" : "Show Filters"}
+              </button>
+              {isAnyFilterActive && (
+                <button className="clear-filters-btn" onClick={clearFilters}>
+                  <i className="bi bi-x-circle"></i>
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
+
+          {showFilters && (
+            <div className="filter-form">
+              <div className="filter-group">
+                <label className="filter-label">
+                  <i className="bi bi-person-search"></i>
+                  Customer Name
+                </label>
+                <div className="search-input-wrapper" style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    name="customerName"
+                    value={filters.customerName}
+                    onChange={handleFilterChange}
+                    placeholder="Search by customer name..."
+                    className="search-input"
+                    style={{
+                      width: "100%",
+                      padding: "10px 40px 10px 14px",
+                      borderRadius: "8px",
+                      border: "1px solid #e5e7eb",
+                      fontSize: "14px",
+                      transition: "all 0.2s",
+                      outline: "none",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "#6366f1";
+                      e.target.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "#e5e7eb";
+                      e.target.style.boxShadow = "none";
+                    }}
+                  />
+                  {filters.customerName && (
+                    <button
+                      type="button"
+                      onClick={() => setFilters((prev) => ({ ...prev, customerName: "" }))}
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#9ca3af",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      title="Clear"
+                    >
+                      <i className="bi bi-x-lg"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="filter-group">
+                <label className="filter-label">
+                  <i className="bi bi-calendar-range"></i>
+                  Planned Date Range
+                </label>
+                <div className="date-range-filters">
+                  <div className="date-input-group">
+                    <label>From:</label>
+                    <input
+                      type="date"
+                      name="plannedDateFrom"
+                      value={filters.plannedDateFrom}
+                      onChange={handleFilterChange}
+                      className="date-input"
+                    />
+                  </div>
+                  <div className="date-input-group">
+                    <label>To:</label>
+                    <input
+                      type="date"
+                      name="plannedDateTo"
+                      value={filters.plannedDateTo}
+                      onChange={handleFilterChange}
+                      className="date-input"
+                      min={filters.plannedDateFrom}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {isAnyFilterActive && (
+                <div className="filter-stats">
+                  <span className="filter-stat-item">
+                    <i className="bi bi-filter-circle"></i>
+                    Active Filters:
+                  </span>
+                  {filters.customerName && (
+                    <span
+                      className="filter-tag"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)",
+                        color: "#5b21b6",
+                      }}
+                    >
+                      <i className="bi bi-person"></i>
+                      Name: "{filters.customerName}"
+                      <button
+                        type="button"
+                        onClick={() => setFilters((prev) => ({ ...prev, customerName: "" }))}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "#5b21b6",
+                          padding: "0",
+                          marginLeft: "4px",
+                        }}
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+                    </span>
+                  )}
+                  {filters.plannedDateFrom && (
+                    <span className="filter-tag">
+                      From: {filters.plannedDateFrom}
+                      <button
+                        type="button"
+                        onClick={() => setFilters((prev) => ({ ...prev, plannedDateFrom: "" }))}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "inherit",
+                          padding: "0",
+                          marginLeft: "4px",
+                        }}
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+                    </span>
+                  )}
+                  {filters.plannedDateTo && (
+                    <span className="filter-tag">
+                      To: {filters.plannedDateTo}
+                      <button
+                        type="button"
+                        onClick={() => setFilters((prev) => ({ ...prev, plannedDateTo: "" }))}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "inherit",
+                          padding: "0",
+                          marginLeft: "4px",
+                        }}
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+                    </span>
+                  )}
+                  <span className="filter-tag results">
+                    Results: {filteredRows.length} of {rows.length}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Table Section */}
+        <div className="table-section">
+          {isLoading ? (
+            <div className="table-loading">
+              <SkeletonTable rowsCount={8} />
+            </div>
+          ) : error ? (
+            <div className="table-empty">
+              <div className="empty-icon error">
+                <i className="bi bi-exclamation-triangle"></i>
+              </div>
+              <h3>Please Refresh the page or try logout and login again</h3>
+              <p>{error.message}</p>
+              <button className="empty-clear-btn" onClick={() => refetch()}>
+                <i className="bi bi-arrow-clockwise"></i>
+                Try Again (Refresh the page)
+              </button>
+            </div>
+          ) : filteredRows.length === 0 ? (
+            <div className="table-empty">
+              <div className="empty-icon">
+                <i className="bi bi-inbox"></i>
+              </div>
+              <h3>No Records Found</h3>
+              <p>
+                {isAnyFilterActive
+                  ? "No records match your filter criteria"
+                  : "No pending leads at the moment"}
+              </p>
+              {isAnyFilterActive && (
+                <button className="empty-clear-btn" onClick={clearFilters}>
+                  <i className="bi bi-funnel"></i>
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="table-wrapper">
+                <table className="modern-table nbdin-table">
+                  <thead>
+                    <tr>
+                      <th><div className="th-content">#</div></th>
+                      <th><div className="th-content"><i className="bi bi-hash"></i> Unique ID</div></th>
+                      <th><div className="th-content"><i className="bi bi-person"></i> Customer Name</div></th>
+                      <th><div className="th-content"><i className="bi bi-telephone"></i> Contact</div></th>
+                      <th><div className="th-content"><i className="bi bi-heart"></i> Interested In</div></th>
+                      <th><div className="th-content"><i className="bi bi-building"></i> Project</div></th>
+                      <th><div className="th-content"><i className="bi bi-diagram-3"></i> Lead Source</div></th>
+                      <th><div className="th-content"><i className="bi bi-phone"></i> Lead Gen No</div></th>
+                      <th><div className="th-content"><i className="bi bi-person-badge"></i> Lead Gen Name</div></th>
+                      <th><div className="th-content"><i className="bi bi-flag"></i> Status</div></th>
+                      <th><div className="th-content"><i className="bi bi-calendar"></i> Planned</div></th>
+                      <th><div className="th-content"><i className="bi bi-arrow-repeat"></i> FollowUp</div></th>
+                      <th><div className="th-content"><i className="bi bi-journal-text"></i> Imp. Note</div></th>
+                      <th><div className="th-content"><i className="bi bi-chat-text"></i> Remarks</div></th>
+                      <th className="th-action"><div className="th-content"><i className="bi bi-gear"></i> Action</div></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRows.map((r, i) => (
+                      <tr
+                        key={`${r.sheetName || "row"}-${r.rowIndex || i}`}
+                        className={isPlannedDateUrgent(r.plannedDate) ? "urgent-visit-row" : ""}
+                        style={{ animationDelay: `${i * 0.02}s` }}
+                      >
+                        <td><span className="row-number">{i + 1}</span></td>
+                        <td>
+                          <span
+                            className="id-badge"
+                            style={{
+                              background: "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)",
+                              color: "#5b21b6",
+                            }}
+                          >
+                            {r.uniqueId || "-"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="customer-name">
+                            {filters.customerName ? (
+                              <HighlightText
+                                text={r.customerName || "-"}
+                                highlight={filters.customerName}
+                              />
+                            ) : (
+                              r.customerName || "-"
+                            )}
+                          </span>
+                        </td>
+                        <td>
+                          <EditContactInline
+                            uniqueId={r.uniqueId}              // ← must pass this (from your row data)
+                            currentContact={r.customerContact}
+                            queryKey={["cp-booking-cannot-contact"]} // ← your query key for that component
+                          />
+                        </td>
+                        <td>
+                          <span className="interest-tag">{r.interestedIn || "-"}</span>
+                        </td>
+                        <td>
+                          <span className="project-name">{r.projectSelection || "-"}</span>
+                        </td>
+                        <td>{getSourceBadge(r.leadSource)}</td>
+                        <td>
+                          <span className="lead-gen-number">{r.leadGenNumber || "-"}</span>
+                        </td>
+                        <td>
+                          <span className="lead-gen-name">{r.leadGenName || "-"}</span>
+                        </td>
+                        <td>{getStatusBadge(r.status)}</td>
+                        <td>
+                          <span
+                            className={`planned-badge ${isPlannedDateUrgent(r.plannedDate) ? "urgent-badge" : ""}`}
+                          >
+                            <i className="bi bi-calendar-event"></i>
+                            {r.plannedDate || "-"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="followup-count">
+                            {r.followUpCount || 0}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className="remarks-text"
+                            style={{
+                              maxWidth: "150px",
+                              display: "inline-block",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              color: r.importantNote ? "#d946ef" : "#6b7280",
+                              fontWeight: r.importantNote ? "600" : "400",
+                            }}
+                            title={r.importantNote}
+                          >
+                            {r.importantNote || "-"}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className="remarks-text"
+                            style={{
+                              maxWidth: "200px",
+                              display: "inline-block",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              color: "#6b7280",
+                            }}
+                            title={r.remarks}
+                          >
+                            {r.remarks || "-"}
+                          </span>
+                        </td>
+                        <td className="action-cell">
+                          <button
+                            className="action-btn"
+                            onClick={() => handleActionClick(r)}
+                            style={{
+                              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                            }}
+                          >
+                            <i className="bi bi-pencil-square"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="table-footer">
+                <div className="footer-info">
+                  <i className="bi bi-info-circle" style={{ color: "#6366f1" }}></i>
+                  Showing <strong>{filteredRows.length}</strong> of{" "}
+                  <strong>{rows.length}</strong> record
+                  {filteredRows.length !== 1 ? "s" : ""}
+                </div>
+                <div className="footer-actions">
+                  {isAnyFilterActive && (
+                    <button
+                      className="clear-filter-btn"
+                      onClick={clearFilters}
+                      style={{
+                        background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                      }}
+                    >
+                      <i className="bi bi-x-circle"></i>
+                      Clear Filter
+                    </button>
+                  )}
+                  <button className="refresh-btn" onClick={() => refetch()}>
+                    <i className="bi bi-arrow-clockwise"></i>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Action Modal */}
+        {showModal && selectedLead && (
+          <div className="modal-overlay" onClick={handleCloseModal}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="modal-header-custom"
+                style={{
+                  background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                }}
+              >
+                <div className="modal-header-content">
+                  <div className="modal-icon">
+                    <i className="bi bi-pencil-square"></i>
+                  </div>
+                  <div className="modal-header-text">
+                    <h2>Update Lead</h2>
+                    <div className="modal-subtitle">
+                      <span className="firm-badge">
+                        <i className="bi bi-person"></i>
+                        {selectedLead.customerName || "Unknown"}
+                      </span>
+                      <span className="contact-badge">
+                        <i className="bi bi-telephone"></i>
+                        {selectedLead.customerContact}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button className="modal-close-btn" onClick={handleCloseModal}>
+                  <i className="bi bi-x-lg"></i>
+                </button>
+              </div>
+
+              <div className="modal-body-custom">
+                <div className="lead-info-card">
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <span className="info-label">
+                        <i className="bi bi-building"></i>
+                        Project
+                      </span>
+                      <span className="info-value">
+                        {selectedLead.projectSelection || "-"}
+                      </span>
+                    </div>
+
+                    <div className="info-item">
+                      <span className="info-label">
+                        <i className="bi bi-arrow-repeat"></i>
+                        FollowUp Count
+                      </span>
+                      <span className="info-value">
+                        <span className="count-badge">
+                          {selectedLead.followUpCount || 0}
+                        </span>
+                      </span>
+                    </div>
+
+                    <div className="info-item">
+                      <span className="info-label">
+                        <i className="bi bi-heart"></i>
+                        Interested In
+                      </span>
+                      <span className="info-value">
+                        {selectedLead.interestedIn || "-"}
+                      </span>
+                    </div>
+
+                    <div className="info-item">
+                      <span className="info-label">
+                        <i className="bi bi-diagram-3"></i>
+                        Lead Source
+                      </span>
+                      <span className="info-value">
+                        {selectedLead.leadSource || "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                  <div className="form-section">
+                    <label className="form-label-custom">
+                      <i className="bi bi-tag-fill" style={{ color: "#6366f1" }}></i>
+                      Status <span className="required">*</span>
+                    </label>
+
+                    <div className="status-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+                      {statusOptions.map((option) => (
+                        <div
+                          key={option.value}
+                          className={`status-option ${formData.status === option.value ? "active" : ""}`}
+                          style={{ "--option-color": option.color }}
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              status: option.value,
+                              fieldVisitDate: "",
+                              nextFollowUpDate: "",
+                            })
+                          }
+                        >
+                          <i className={`bi ${option.icon}`}></i>
+                          <span>{option.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {formData.status === "Done" && (
+                    <div className="form-section">
+                      <label className="form-label-custom">
+                        <i className="bi bi-calendar-event" style={{ color: "#6366f1" }}></i>
+                        Field Visit Schedule Date
+                      </label>
+                      <div className="input-wrapper">
+                        <input
+                          type="datetime-local"
+                          className="form-input-custom"
+                          value={formData.fieldVisitDate}
+                          onChange={(e) => setFormData({ ...formData, fieldVisitDate: e.target.value })}
+                          style={{ color: "#000", backgroundColor: "#fff" }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(formData.status === "No conversation" || formData.status === "Next Follow Up") && (
+                    <div
+                      className="form-section meeting-date-section"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)",
+                        borderColor: "rgba(99, 102, 241, 0.2)",
+                      }}
+                    >
+                      <label className="form-label-custom">
+                        <i className="bi bi-calendar-plus" style={{ color: "#000" }}></i>
+                        Next FollowUp Date <span className="required">*</span>
+                      </label>
+                      <div className="input-wrapper">
+                        <input
+                          type="datetime-local"
+                          className="form-input-custom"
+                          value={formData.nextFollowUpDate}
+                          onChange={(e) => setFormData({ ...formData, nextFollowUpDate: e.target.value })}
+                          style={{ color: "#000", backgroundColor: "#fff" }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="form-section">
+                    <label className="form-label-custom">
+                      <i className="bi bi-journal-text" style={{ color: "#d946ef" }}></i>
+                      Important Note
+                    </label>
+                    <div className="input-wrapper">
+                      <textarea
+                        className="form-input-custom"
+                        rows="2"
+                        placeholder="Add important note (optional)..."
+                        value={formData.importantNote}
+                        onChange={(e) => setFormData({ ...formData, importantNote: e.target.value })}
+                        style={{
+                          color: "#000",
+                          backgroundColor: "#fff",
+                          resize: "vertical",
+                          borderLeft: "3px solid #d946ef",
+                        }}
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label-custom">
+                      <i className="bi bi-car-front-fill" style={{ color: "#f59e0b" }}></i>
+                      Pick and Drop Required?
+                    </label>
+
+                    <div className="radio-group-container" style={{ display: "flex", gap: "20px", marginTop: "5px" }}>
+                      <label
+                        className={`radio-label ${formData.pickAndDrop === "Yes" ? "active" : ""}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          cursor: "pointer",
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          border: formData.pickAndDrop === "Yes" ? "1px solid #10b981" : "1px solid #e5e7eb",
+                          backgroundColor: formData.pickAndDrop === "Yes" ? "#d1fae5" : "#fff",
+                          color: formData.pickAndDrop === "Yes" ? "#065f46" : "#374151",
+                          fontWeight: "500",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="pickAndDrop"
+                          value="Yes"
+                          checked={formData.pickAndDrop === "Yes"}
+                          onChange={(e) => setFormData({ ...formData, pickAndDrop: e.target.value })}
+                          style={{ accentColor: "#10b981" }}
+                        />
+                        Yes
+                      </label>
+
+                      <label
+                        className={`radio-label ${formData.pickAndDrop === "No" ? "active" : ""}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          cursor: "pointer",
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          border: formData.pickAndDrop === "No" ? "1px solid #ef4444" : "1px solid #e5e7eb",
+                          backgroundColor: formData.pickAndDrop === "No" ? "#fee2e2" : "#fff",
+                          color: formData.pickAndDrop === "No" ? "#991b1b" : "#374151",
+                          fontWeight: "500",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="pickAndDrop"
+                          value="No"
+                          checked={formData.pickAndDrop === "No"}
+                          onChange={(e) => setFormData({ ...formData, pickAndDrop: e.target.value })}
+                          style={{ accentColor: "#ef4444" }}
+                        />
+                        No
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <label className="form-label-custom">
+                      <i className="bi bi-chat-text" style={{ color: "#6366f1" }}></i>
+                      New Remarks
+                    </label>
+                    <div className="input-wrapper">
+                      <textarea
+                        className="form-input-custom"
+                        rows="3"
+                        placeholder="Add new remarks here..."
+                        value={formData.remarks}
+                        onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                        style={{
+                          color: "#000",
+                          backgroundColor: "#fff",
+                          resize: "vertical",
+                        }}
+                      ></textarea>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <div className="modal-footer-custom">
+                <button type="button" className="btn-cancel" onClick={handleCloseModal}>
+                  <i className="bi bi-x-circle"></i>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-submit"
+                  onClick={handleSubmit}
+                  disabled={updateMutation.isPending || !formData.status}
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                  }}
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <div className="spinner"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-circle-fill"></i>
+                      Submit
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </Layout>
+  );
+}
+
+// Keep your HighlightText helper component
+const HighlightText = ({ text, highlight }) => {
+  if (!highlight.trim()) return <span>{text}</span>;
+  const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const parts = text.split(regex);
+  return (
+    <span>
+      {parts.map((part, index) =>
+        regex.test(part) ? (
+          <mark key={index} style={{ backgroundColor: "#fef08a", padding: "0 2px", borderRadius: "2px" }}>
+            {part}
+          </mark>
+        ) : (
+          <span key={index}>{part}</span>
+        )
+      )}
+    </span>
+  );
+};
+
+export default CPCanContactFollowup;
