@@ -17,6 +17,9 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://vrn-sales.vercel.app",
+  "https://vrn-sales.vercel.app",
+  "https://sales-crm-three-gamma.vercel.app",
+  "https://sales-crm-vrn.vercel.app"
 ];
 
 const allowedPatterns = [
