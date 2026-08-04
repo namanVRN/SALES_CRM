@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
@@ -31,360 +32,299 @@ import CPCannotContactAfterFV from "./cpNbd/CPCannotContact/CpStepThree.jsx";
 import CPMeetingCannotContact from "./cpNbd/CPCannotContact/CpStepFour.jsx";
 import FSRPage from "./pages/FSRPage.jsx";
 import CNPLeads from "./Nbd/CNPLeads.jsx";
+import BirthdayPopup from "./components/BirthdayPopup";
 
 function App() {
   const { user } = useAuth();
 
   return (
-    <Routes>
-      {/* ============================================ */}
-      {/* PUBLIC ROUTE - Login */}
-      {/* ============================================ */}
-      <Route
-        path="/"
-        element={user ? <Navigate to="/dashboard" replace /> : <Login />}
-      />
-      {/* ============================================ */}
-      {/* PROTECTED - Dashboard (All users) */}
-      {/* ============================================ */}
-      <Route
-        path="/dashboard"
-        element={
-          <PrivateRoute>
-            <Dashboard />
-          </PrivateRoute>
-        }
-      />
-      {/* ============================================ */}
-      {/* NBD IN ROUTES - Only BDM1 (nbd) + Admin */}
-      {/* ============================================ */}
-      <Route
-        path="/nbd-in"
-        element={
-          <PrivateRoute requiredModule="nbd">
-            <NbdIn />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/nbd-in/NBD_IN"
-        element={
-          <PrivateRoute requiredModule="nbd">
-            <NBD_IN />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/nbd-in/field-visit"
-        element={
-          <PrivateRoute requiredModule="nbd">
-            <FieldVisit />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/nbd-in/followup"
-        element={
-          <PrivateRoute requiredModule="nbd">
-            <AfterFieldVisitFollowUp />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/nbd-in/meeting"
-        element={
-          <PrivateRoute requiredModule="nbd">
-            <MeetingNbd />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/nbd-in/cnp"
-        element={
-          <PrivateRoute requiredModule="nbd">
-            <CNPLeads />
-          </PrivateRoute>
-        }
-      />
-      {/* <Route
-        path="/nbd-in/booking"
-        element={
-          <PrivateRoute requiredModule="nbd">
-            <BookingNbd />
-          </PrivateRoute>
-        }
-      /> */}
-      {/* ============================================ */}
-      {/* CP NBD ROUTES - Only BDM2 (cp) + Admin */}
-      {/* ============================================ */}
-      <Route
-        path="/cp"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CP_Page />
-          </PrivateRoute>
-        }
-      />
-      {/* ============================================ */}
-      {/* CHANNEL PARTNER ROUTES (Keep existing) */}
-      {/* ============================================ */}
-      <Route
-        path="/channel-partner"
-        element={
-          <PrivateRoute>
-            <ChannelPartner />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/channel-partner/cp-outgoing"
-        element={
-          <PrivateRoute>
-            <CPOutgoing />
-          </PrivateRoute>
-        }
-      />
-      {/* ============================================ */}
-      {/* PROCESS ROUTES (Keep existing) */}
-      {/* ============================================ */}
-      <Route
-        path="/process/call-to-broker"
-        element={
-          <PrivateRoute>
-            <CallToBroker />
-          </PrivateRoute>
-        }
-      />
-      {/* <Route
-        path="/process/followup"
-        element={
-          <PrivateRoute>
-            <Followup />
-          </PrivateRoute>
-        }
-      /> */}
-      <Route
-        path="/process/meetings/overview"
-        element={
-          <PrivateRoute>
-            <MeetingsOverview />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/process/meetings/Meetings"
-        element={
-          <PrivateRoute>
-            <Meetings />
-          </PrivateRoute>
-        }
-      />
-      {/* <Route
-        path="/process/meetings/full-kitting"
-        element={
-          <PrivateRoute>
-            <FullKittingPage />
-          </PrivateRoute>
-        }
-      /> */}
-      <Route
-        path="/process/meetings/agreement"
-        element={
-          <PrivateRoute>
-            <AgreementPage />
-          </PrivateRoute>
-        }
-      />
-      {/* ============================================ */}
-      {/* NEW PROJECT DEVELOPMENT */}
-      {/* ============================================ */}
-      <Route
-        path="/new-project-development"
-        element={
-          <PrivateRoute>
-            <NewProjectProcess />
-          </PrivateRoute>
-        }
-      />
-      {/* ============================================ */}
-      {/* CATCH ALL - Redirect to Dashboard */}
-      {/* ============================================ */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      ============================================
-      {/* CP NBD ROUTES - Only BDM2 (cp) + Admin */}
-      {/* ============================================ */}
-      {/* <Route
-        path="/cp"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CP_Page />
-          </PrivateRoute>
-        }
-      /> */}
-      {/* CP Lead Form */}
-      {/* <Route
-        path="/cp/lead-form"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPLeadForm />
-          </PrivateRoute>
-        }
-      /> */}
-      {/* CP Can Contact - 5 Steps */}
-      {/* <Route
-        path="/cp/can-contact"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPCanContact />
-          </PrivateRoute>
-        }
-      /> */}
-      {/* CP Cannot Contact - 5 Steps */}
-      {/* <Route
-        path="/cp/cannot-contact"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPCannotContact />
-          </PrivateRoute>
-        }
-      /> */}
-      <Route
-        path="/cp/lead-form"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPLeadForm />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/can-contact"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <MainPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/cannot-contact"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CpMainPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/can-contact/follow-up"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPCanContactFollowup />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/can-contact/field-visit"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPFieldVisitCanContact />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/can-contact/after-field-visit"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPAfterFieldVisitFollowUp />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/can-contact/meetings"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPMeetingCanContact />
-          </PrivateRoute>
-        }
-      />
-      {/* <Route
-        path="/cp/can-contact/bookings"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPBookingCanContact />
-          </PrivateRoute>
-        }
-      /> */}
-      <Route
-        path="/cp/cannot-contact/follow-up"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPCannotContactFollowup />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/cannot-contact/field-visit"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPFieldVisitCannotContact />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/cannot-contact/after-field-visit"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPCannotContactAfterFV />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/cp/cannot-contact/meetings"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPMeetingCannotContact />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/fsr"
-        element={
-          <PrivateRoute requiredModule="fsr">
-            <FSRPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/fsr/field-visit"
-        element={
-          <PrivateRoute requiredModule="fsr">
-            <FieldVisit />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/fsr/followup"
-        element={
-          <PrivateRoute requiredModule="fsr">
-            <AfterFieldVisitFollowUp />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/fsr/meeting"
-        element={
-          <PrivateRoute requiredModule="fsr">
-            <MeetingNbd />
-          </PrivateRoute>
-        }
-      />
-      {/* <Route
-        path="/cp/cannot-contact/bookings"
-        element={
-          <PrivateRoute requiredModule="cp">
-            <CPBookingCannotContact />
-          </PrivateRoute>
-        }
-      /> */}
-    </Routes>
+    <>
+      <Routes>
+        {/* ============================================ */}
+        {/* PUBLIC ROUTE - Login */}
+        {/* ============================================ */}
+        <Route
+          path="/"
+          element={user ? <Navigate to="/dashboard" replace /> : <Login />}
+        />
+
+        {/* ============================================ */}
+        {/* PROTECTED - Dashboard (All users) */}
+        {/* ============================================ */}
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ============================================ */}
+        {/* NBD IN ROUTES - Only BDM1 (nbd) + Admin */}
+        {/* ============================================ */}
+        <Route
+          path="/nbd-in"
+          element={
+            <PrivateRoute requiredModule="nbd">
+              <NbdIn />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/nbd-in/NBD_IN"
+          element={
+            <PrivateRoute requiredModule="nbd">
+              <NBD_IN />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/nbd-in/field-visit"
+          element={
+            <PrivateRoute requiredModule="nbd">
+              <FieldVisit />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/nbd-in/followup"
+          element={
+            <PrivateRoute requiredModule="nbd">
+              <AfterFieldVisitFollowUp />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/nbd-in/meeting"
+          element={
+            <PrivateRoute requiredModule="nbd">
+              <MeetingNbd />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/nbd-in/cnp"
+          element={
+            <PrivateRoute requiredModule="nbd">
+              <CNPLeads />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ============================================ */}
+        {/* CP NBD ROUTES - Only BDM2 (cp) + Admin */}
+        {/* ============================================ */}
+        <Route
+          path="/cp"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CP_Page />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/lead-form"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPLeadForm />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/can-contact"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <MainPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/cannot-contact"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CpMainPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/can-contact/follow-up"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPCanContactFollowup />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/can-contact/field-visit"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPFieldVisitCanContact />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/can-contact/after-field-visit"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPAfterFieldVisitFollowUp />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/can-contact/meetings"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPMeetingCanContact />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/cannot-contact/follow-up"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPCannotContactFollowup />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/cannot-contact/field-visit"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPFieldVisitCannotContact />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/cannot-contact/after-field-visit"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPCannotContactAfterFV />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cp/cannot-contact/meetings"
+          element={
+            <PrivateRoute requiredModule="cp">
+              <CPMeetingCannotContact />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ============================================ */}
+        {/* CHANNEL PARTNER ROUTES */}
+        {/* ============================================ */}
+        <Route
+          path="/channel-partner"
+          element={
+            <PrivateRoute>
+              <ChannelPartner />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/channel-partner/cp-outgoing"
+          element={
+            <PrivateRoute>
+              <CPOutgoing />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ============================================ */}
+        {/* PROCESS ROUTES */}
+        {/* ============================================ */}
+        <Route
+          path="/process/call-to-broker"
+          element={
+            <PrivateRoute>
+              <CallToBroker />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/process/meetings/overview"
+          element={
+            <PrivateRoute>
+              <MeetingsOverview />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/process/meetings/Meetings"
+          element={
+            <PrivateRoute>
+              <Meetings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/process/meetings/agreement"
+          element={
+            <PrivateRoute>
+              <AgreementPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ============================================ */}
+        {/* NEW PROJECT DEVELOPMENT */}
+        {/* ============================================ */}
+        <Route
+          path="/new-project-development"
+          element={
+            <PrivateRoute>
+              <NewProjectProcess />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ============================================ */}
+        {/* FSR ROUTES */}
+        {/* ============================================ */}
+        <Route
+          path="/fsr"
+          element={
+            <PrivateRoute requiredModule="fsr">
+              <FSRPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fsr/field-visit"
+          element={
+            <PrivateRoute requiredModule="fsr">
+              <FieldVisit />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fsr/followup"
+          element={
+            <PrivateRoute requiredModule="fsr">
+              <AfterFieldVisitFollowUp />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fsr/meeting"
+          element={
+            <PrivateRoute requiredModule="fsr">
+              <MeetingNbd />
+            </PrivateRoute>
+          }
+        />
+
+        {/* ============================================ */}
+        {/* CATCH ALL - Redirect to Dashboard */}
+        {/* ============================================ */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+
+      {/* ✅ Birthday Popup - OUTSIDE Routes, shows globally */}
+      <BirthdayPopup />
+    </>
   );
 }
 

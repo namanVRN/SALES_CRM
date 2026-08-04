@@ -186,8 +186,8 @@ const handleResultClick = (result) => {
 };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    navigate("/login");
+    localStorage.clear();
+    window.location.href = "/";
   };
 
   return (
@@ -197,9 +197,9 @@ const handleResultClick = (result) => {
         <div className="header-inner">
           {/* Logo */}
           <Link to="/dashboard" className="header-logo">
-            <div className="logo-icon">
+            {/* <div className="logo-icon">
               <i className="bi bi-graph-up-arrow"></i>
-            </div>
+            </div> */}
             <div className="logo-text">
               <span className="logo-title">VRN INC.</span>
               <span className="logo-subtitle">Sales CRM</span>

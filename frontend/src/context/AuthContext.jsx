@@ -19,7 +19,6 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
     const currentUser = getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
@@ -34,21 +33,33 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
-  // Logout function
+  // ✅ Fixed Logout function
   const handleLogout = () => {
+    // 1. Clear API auth
     logoutApi();
+    
+    // 2. Clear all localStorage
+    localStorage.clear();
+    
+    // 3. Reset user state
     setUser(null);
+    
+    // 4. Show toast
     toast.success("Logged out successfully!");
-    navigate("/");
+    
+    // 5. Force redirect (with small delay for toast)
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 500);
   };
 
   // Check module access
-const hasModuleAccess = (module) => {
-  if (!user) return false;
-  if (user.role === "admin" || user.assignedModule === "all") return true;
-  if (user.assignedModule === "fsr" && module === "fsr") return true;
-  return user.assignedModule === module;
-};
+  const hasModuleAccess = (module) => {
+    if (!user) return false;
+    if (user.role === "admin" || user.assignedModule === "all") return true;
+    if (user.assignedModule === "fsr" && module === "fsr") return true;
+    return user.assignedModule === module;
+  };
 
   const value = {
     user,
