@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const CP_SPREADSHEET_ID = process.env.CP_SPREADSHEET_ID;
+const CP_SPREADSHEET_ID = process.env.CP_LEAD_FORM_SPREADSHEET_ID;
 const CP_LEAD_SHEET = "Channel Partner FMS";
 const DATA_START_ROW = 8;
 
@@ -42,17 +42,23 @@ function getCurrentISTTimestamp() {
 }
 
 // ============================================
-// FINAL STATUSES - These close the lead
+// FINAL STATUSES - These CLOSE the lead (Actual date set होगी)
 // ============================================
-const FINAL_STATUSES = ["Qualified", "Not Interested", "Not Qualified"];
+const EXCLUDED_STATUSES = new Set([
+  "qualified",
+  "not interested",
+  "not qualified",
+  "no connection yet",
+]);
+// ❌ "Next Followup Required" और "No Connection Yet" को REMOVE किया
+// ✅ ये दोनों intermediate हैं - Actual set नहीं होगी, lead pending रहेगी
 
 // ============================================
 // GET /list - Fetch pending leads
 // ============================================
-
 router.get("/list", async (req, res) => {
   try {
-    console.log("📊 Fetching CP Lead Form pending records...");
+    console.log("📊 Fetching CP Lead Form records by STATUS filter only...");
 
     const response = await req.sheets.spreadsheets.values.get({
       spreadsheetId: CP_SPREADSHEET_ID,
@@ -73,7 +79,7 @@ router.get("/list", async (req, res) => {
       const leadRemark         = row[8]  || "";
       const followUpCountStr   = row[9]  || "0";
       const planned            = row[10] || "";
-      const actual             = row[11] || "";
+      const actual             = row[11] || ""; // ignore for filtering
       const status             = row[12] || "";
       const projectSelection   = row[13] || "";
       const importantNote      = row[14] || "";
@@ -85,8 +91,12 @@ router.get("/list", async (req, res) => {
       const notQualifiedReason = row[20] || "";
       const canContact         = row[21] || "No";
 
-      // Show only pending: Planned has value AND Actual is empty
-      if (planned.trim() && !actual.trim()) {
+      const normalizedStatus = status.trim().toLowerCase();
+      const isExcludedStatus = EXCLUDED_STATUSES.has(normalizedStatus);
+
+      // ✅ Actual se koi filter nahi
+      // ✅ Sirf status se filter
+      if (!isExcludedStatus) {
         filteredLeads.push({
           rowIndex: index + DATA_START_ROW,
           uniqueId,
@@ -99,7 +109,8 @@ router.get("/list", async (req, res) => {
           leadRemark,
           followUpCount: parseInt(followUpCountStr) || 0,
           plannedDate: planned,
-          status,
+          actualDate: actual,
+          status: status.trim(),
           projectSelection,
           importantNote,
           purpose,
@@ -113,10 +124,9 @@ router.get("/list", async (req, res) => {
       }
     });
 
-    // Sort by planned date ascending
     filteredLeads.sort((a, b) => parseDate(a.plannedDate) - parseDate(b.plannedDate));
 
-    console.log(`✅ Found ${filteredLeads.length} pending leads`);
+    console.log(`✅ Found ${filteredLeads.length} records after status filter`);
 
     res.json({
       success: true,
@@ -132,6 +142,245 @@ router.get("/list", async (req, res) => {
     });
   }
 });
+// ============================================
+// POST /update - Update lead based on status
+// ============================================
+router.post("/update", async (req, res) => {
+  try {
+    const {
+      rowIndex,
+      status,
+      remarks = "",
+      projectSelection = "",
+      importantNote = "",
+      purpose = "",
+      plannedSiteVisit = "",
+      sendWhatsapp = "No",
+      whatsappProject = "",
+      alternateWhatsapp = "",
+      nextFollowUp = "",
+      notQualifiedReason = "",
+      canContact = "Yes",
+      currentFollowUpCount = 0,
+    } = req.body;
+
+    if (!rowIndex || rowIndex < DATA_START_ROW || !status) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid or missing rowIndex / status",
+      });
+    }
+
+    // ✅ Valid status check
+    const ALL_VALID_STATUSES = [
+      "Qualified",
+      "Next Followup Required",
+      "No Connection Yet",
+      "Not Interested",
+      "Not Qualified",
+    ];
+
+    if (!ALL_VALID_STATUSES.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid status value",
+      });
+    }
+
+    console.log(`📝 Updating lead row ${rowIndex} → Status: ${status}`);
+
+    const timestamp = getCurrentISTTimestamp();
+    const newFollowUpCount = Number(currentFollowUpCount) + 1;
+    const updates = [];
+
+    // ✅ FINAL STATUS CHECK:
+    // Only "Qualified", "Not Interested", "Not Qualified" close the lead
+    // "Next Followup Required" और "No Connection Yet" lead को pending रखते हैं
+    const isFinalStatus = FINAL_STATUSES.includes(status);
+
+    console.log(
+      `📌 Status: ${status} | Type: ${isFinalStatus ? "FINAL ✅" : "INTERMEDIATE ⏳"}`
+    );
+
+    // ============================================
+    // J - FollowUp Count (always increment)
+    // ============================================
+    updates.push({
+      range: `'${CP_LEAD_SHEET}'!J${rowIndex}`,
+      values: [[newFollowUpCount]],
+    });
+
+    // ============================================
+    // M - Status (always update)
+    // ============================================
+    updates.push({
+      range: `'${CP_LEAD_SHEET}'!M${rowIndex}`,
+      values: [[status]],
+    });
+
+    // ============================================
+    // R - Send WhatsApp (always update)
+    // ============================================
+    updates.push({
+      range: `'${CP_LEAD_SHEET}'!R${rowIndex}`,
+      values: [[sendWhatsapp]],
+    });
+
+    // ============================================
+    // L - Actual Date (ONLY for FINAL statuses)
+    // Qualified, Not Interested, Not Qualified → Lead CLOSE
+    // ============================================
+    if (isFinalStatus) {
+      updates.push({
+        range: `'${CP_LEAD_SHEET}'!L${rowIndex}`,
+        values: [[timestamp]],
+      });
+      console.log(`✅ Actual date set: ${timestamp} (Lead Closed)`);
+    } else {
+      console.log(`⏭️ Actual date NOT set (Lead stays pending)`);
+    }
+
+    // ============================================
+    // Remarks (T)
+    // ============================================
+    let finalRemarks = remarks.trim();
+
+    if (sendWhatsapp === "Yes" && whatsappProject) {
+      const altNum = alternateWhatsapp.trim() || "Same as main number";
+      const whatsappNote = `WhatsApp Sent: ${whatsappProject} (Alt: ${altNum})`;
+      finalRemarks = finalRemarks
+        ? `${finalRemarks}\n${whatsappNote}`
+        : whatsappNote;
+    }
+
+    if (finalRemarks) {
+      updates.push({
+        range: `'${CP_LEAD_SHEET}'!T${rowIndex}`,
+        values: [[finalRemarks]],
+      });
+    }
+
+    // ============================================
+    // Status-specific updates
+    // ============================================
+    switch (status) {
+
+      case "Qualified":
+        if (projectSelection) {
+          updates.push({
+            range: `'${CP_LEAD_SHEET}'!N${rowIndex}`,
+            values: [[projectSelection]],
+          });
+        }
+        if (importantNote) {
+          updates.push({
+            range: `'${CP_LEAD_SHEET}'!O${rowIndex}`,
+            values: [[importantNote]],
+          });
+        }
+        if (purpose) {
+          updates.push({
+            range: `'${CP_LEAD_SHEET}'!P${rowIndex}`,
+            values: [[purpose]],
+          });
+        }
+        if (plannedSiteVisit) {
+          updates.push({
+            range: `'${CP_LEAD_SHEET}'!S${rowIndex}`,
+            values: [[formatDateTimeForSheet(plannedSiteVisit)]],
+          });
+        }
+        if (canContact) {
+          updates.push({
+            range: `'${CP_LEAD_SHEET}'!V${rowIndex}`,
+            values: [[canContact]],
+          });
+        }
+        break;
+
+      case "Next Followup Required":
+        // ✅ Next followup date set करो
+        // ✅ Planned (K) को भी update करो ताकि lead फिर से दिखे उस date पर
+        // ✅ Actual (L) set नहीं होगी → lead pending रहेगी
+        if (nextFollowUp) {
+          const formatted = formatDateTimeForSheet(nextFollowUp);
+          
+          // Q - Next Follow Up Date
+          updates.push({
+            range: `'${CP_LEAD_SHEET}'!Q${rowIndex}`,
+            values: [[formatted]],
+          });
+
+          // K - Planned Date (नई followup date पर lead दिखेगी)
+          updates.push({
+            range: `'${CP_LEAD_SHEET}'!K${rowIndex}`,
+            values: [[formatted]],
+          });
+
+          console.log(`📅 Next followup scheduled: ${formatted}`);
+        }
+        break;
+
+      case "No Connection Yet":
+        // ✅ Lead pending रहती है same planned date पर
+        // ✅ Actual set नहीं होगी
+        // ✅ Status update हो जाएगा "No Connection Yet"
+        console.log(`📵 No connection - lead stays pending`);
+        break;
+
+      case "Not Qualified":
+        if (notQualifiedReason.trim()) {
+          updates.push({
+            range: `'${CP_LEAD_SHEET}'!U${rowIndex}`,
+            values: [[notQualifiedReason]],
+          });
+        }
+        break;
+
+      case "Not Interested":
+        // Actual date ऊपर set हो गई है - lead close
+        break;
+    }
+
+    // ============================================
+    // Execute batch update
+    // ============================================
+    console.log(`📤 Executing ${updates.length} updates...`);
+
+    await req.sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: CP_SPREADSHEET_ID,
+      requestBody: {
+        valueInputOption: "USER_ENTERED",
+        data: updates.map((u) => ({
+          range: u.range,
+          majorDimension: "ROWS",
+          values: u.values,
+        })),
+      },
+    });
+
+    console.log(`✅ Lead updated successfully!`);
+
+    res.json({
+      success: true,
+      message: isFinalStatus
+        ? "Lead closed successfully ✅"
+        : "Lead updated, will appear in pending list ⏳",
+      newFollowUpCount,
+      isFinalStatus,
+      status,
+    });
+
+  } catch (error) {
+    console.error("❌ Update failed:", error.message);
+    res.status(500).json({
+      success: false,
+      error: "Failed to update lead",
+      message: error.message,
+    });
+  }
+});
+
 
 // ============================================
 // POST /update - Update lead based on status
