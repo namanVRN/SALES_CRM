@@ -94,7 +94,7 @@ router.get("/list", async (req, res) => {
       const normalizedStatus = status.trim().toLowerCase();
       const isExcludedStatus = EXCLUDED_STATUSES.has(normalizedStatus);
 
-      // ✅ Actual se koi filter nahi
+      
       // ✅ Sirf status se filter
       if (!isExcludedStatus) {
         filteredLeads.push({
