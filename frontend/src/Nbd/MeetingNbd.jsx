@@ -182,7 +182,8 @@ function MeetingNbd() {
     if (fsrDoer === "BDM4") return "Ranjeet Gour";
     if (fsrDoer === "BDM5") return "Amit Rohar";
     if (fsrDoer === "Varun Sir") return "Varun Sir";
-    if (fsrDoer === "BDM7") return "Ayush Sahu";
+    if (fsrDoer === "BDM8") return "Ayush Dixit";
+    if (fsrDoer === "BDM9") return "Rohit Kumar";
     return fsrDoer || "-";
   };
 
