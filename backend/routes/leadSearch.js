@@ -1,3 +1,309 @@
+// const express = require("express");
+// const router = express.Router();
+
+// const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+// const SHEET_NAME = "END USER LEADS FMS";
+// const CP_SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+// const CP_LEAD_SHEET = "Channel Partner Lead FMS";
+
+// // ============================================
+// // Step Detection Logic
+// // ============================================
+
+// function detectLeadStep(row) {
+//   const getCol = (index) => (row[index] ? row[index].trim() : "");
+
+//   const uniqueId = getCol(1);
+//   const customerName = getCol(2);
+//   const customerContact = getCol(3);
+//   const projectSelection = getCol(5);
+//   const leadSource = getCol(6);
+
+//   // Step 1: First Follow Up - Column O (14)
+//   const step1Status = getCol(14);
+//   const isInStep1 =
+//     step1Status === "" ||
+//     step1Status.toLowerCase() === "no conversation" ||
+//     step1Status.toLowerCase() === "next follow up";
+
+//   // Step 2: Site Visit
+//   const step2PlannedDate = getCol(20);
+//   const step2Status = getCol(22);
+//   const step2StatusLower = step2Status.toLowerCase();
+
+//   // ✅ NEW: CNP detection
+//   const isInCNP = step2StatusLower === "call not picked";
+
+//   const isInStep2 =
+//     step2PlannedDate &&
+//     (step2Status === "" ||
+//       step2StatusLower === "pending" ||
+//       step2StatusLower === "rescheduled" ||
+//       step2StatusLower === "next followup required" ||
+//       step2StatusLower === "cold");
+
+//   // Step 3
+//   const step3PlannedDate = getCol(26);
+//   const step3ActualDate = getCol(27);
+//   const step3Status = getCol(28);
+//   const step3StatusLower = step3Status.toLowerCase();
+//   const isInStep3 =
+//     (step3PlannedDate && !step3ActualDate) ||
+//     step3StatusLower === "no conversation" ||
+//     step3StatusLower === "next follow up" ||
+//     step3StatusLower === "next field visit required";
+
+//   // Step 4
+//   const step4PlannedDate = getCol(33);
+//   const step4ActualDate = getCol(34);
+//   const step4Status = getCol(35);
+//   const step4StatusLower = step4Status.toLowerCase();
+//   const isInStep4 =
+//     step4PlannedDate &&
+//     (!step4Status ||
+//       step4StatusLower === "rescheduled" ||
+//       step4StatusLower === "next field visit required");
+
+//   // Step 5: Booking
+//   const step5PlannedDate = getCol(38);
+//   const isInStep5 = step5PlannedDate !== "";
+
+//   // ✅ NEW: CP Can/Cannot Contact (Col AM = index 38)
+//   const cpCanContactFlag = getCol(38); // "Yes" or "No" in CP sheet
+//   const canContact = cpCanContactFlag === "No" ? "No" : "Yes";
+
+//   let currentStep = null;
+//   let stepName = "";
+//   let stepStatus = "";
+//   let stepPlannedDate = "";
+//   let stepColor = "";
+//   let stepIcon = "";
+
+//   // ✅ Priority: CNP first (sub-state of Step 2)
+//   if (isInCNP) {
+//     currentStep = 2;
+//     stepName = "Call Not Picked (CNP)";
+//     stepStatus = "Call Not Picked";
+//     stepPlannedDate = step2PlannedDate;
+//     stepColor = "#0891b2"; // Cyan
+//     stepIcon = "bi-telephone-x-fill";
+//   } else if (isInStep1) {
+//     currentStep = 1;
+//     stepName = "First Follow-Up";
+//     stepStatus = step1Status || "Pending";
+//     stepPlannedDate = "";
+//     stepColor = "#3b82f6";
+//     stepIcon = "bi-telephone-fill";
+//   } else if (isInStep2) {
+//     currentStep = 2;
+//     stepName = "Site Visit";
+//     stepStatus = step2Status || "Pending";
+//     stepPlannedDate = step2PlannedDate;
+//     stepColor = "#ec4899";
+//     stepIcon = "bi-geo-alt-fill";
+//   } else if (isInStep3) {
+//     currentStep = 3;
+//     stepName = "After Site Visit Follow-Up";
+//     stepStatus = step3Status || "Pending";
+//     stepPlannedDate = step3PlannedDate;
+//     stepColor = "#f59e0b";
+//     stepIcon = "bi-chat-dots-fill";
+//   } else if (isInStep4) {
+//     currentStep = 4;
+//     stepName = "Meeting";
+//     stepStatus = step4Status || "Pending";
+//     stepPlannedDate = step4PlannedDate;
+//     stepColor = "#8b5cf6";
+//     stepIcon = "bi-calendar-check-fill";
+//   } else if (isInStep5) {
+//     currentStep = 5;
+//     stepName = "Booking";
+//     stepStatus = "Booking Pending";
+//     stepPlannedDate = step5PlannedDate;
+//     stepColor = "#10b981";
+//     stepIcon = "bi-check-circle-fill";
+//   }
+
+//   // Completed check
+//   const finalStatuses = [
+//     "done",
+//     "not interested",
+//     "negotiation failed",
+//     "deal not done",
+//     "booked",
+//   ];
+//   if (step4StatusLower && finalStatuses.includes(step4StatusLower)) {
+//     currentStep = 0;
+//     stepName = "Completed/Closed";
+//     stepStatus = step4Status;
+//     stepColor = "#6b7280";
+//     stepIcon = "bi-check-all";
+//   }
+
+//   return {
+//     uniqueId,
+//     customerName,
+//     customerContact,
+//     projectSelection,
+//     leadSource,
+//     currentStep,
+//     stepName,
+//     stepStatus,
+//     stepPlannedDate,
+//     stepColor,
+//     stepIcon,
+//     canContact, // ✅ NEW
+//   };
+// }
+
+// // ============================================
+// // Search in Sheet
+// // ============================================
+
+// async function searchInSheet(sheets, spreadsheetId, sheetName, searchTerm, sheetType) {
+//   try {
+//     const response = await sheets.spreadsheets.values.get({
+//       spreadsheetId: spreadsheetId,
+//       range: `'${sheetName}'!A8:AO`,
+//     });
+
+//     const rows = response.data.values || [];
+//     const results = [];
+//     const searchLower = searchTerm.toLowerCase().trim();
+
+//     rows.forEach((row, index) => {
+//       const customerName = row[2] ? row[2].trim().toLowerCase() : "";
+//       const customerContact = row[3] ? row[3].trim() : "";
+//       const uniqueId = row[1] ? row[1].trim().toLowerCase() : "";
+//       const leadGenName = row[8] ? row[8].trim().toLowerCase() : "";
+
+//       // Search by name, contact, or unique ID
+//       const isMatch = 
+//         customerName.includes(searchLower) ||
+//         customerContact.includes(searchLower) ||
+//         uniqueId.includes(searchLower) ||
+//         leadGenName.includes(searchLower);
+
+//       if (isMatch) {
+//         const leadInfo = detectLeadStep(row);
+        
+//         if (leadInfo.currentStep !== null) {
+//           results.push({
+//             ...leadInfo,
+//             rowIndex: index + 8,
+//             sheetName: sheetName,
+//             sheetType: sheetType, // "Direct" or "Channel Partner"
+//             spreadsheetId: spreadsheetId,
+//           });
+//         }
+//       }
+//     });
+
+//     return results;
+//   } catch (error) {
+//     console.error(`Error searching in ${sheetName}:`, error.message);
+//     return [];
+//   }
+// }
+
+// // ============================================
+// // ROUTES
+// // ============================================
+
+// router.get("/search", async (req, res) => {
+//   try {
+//     const { q } = req.query;
+
+//     if (!q || q.trim().length < 2) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "Search term must be at least 2 characters",
+//       });
+//     }
+
+//     const searchTerm = q.trim();
+
+//     // Search in both sheets
+//     const [directResults, cpResults] = await Promise.all([
+//       searchInSheet(req.sheets, SPREADSHEET_ID, SHEET_NAME, searchTerm, "Direct"),
+//       searchInSheet(req.sheets, CP_SPREADSHEET_ID, CP_LEAD_SHEET, searchTerm, "Channel Partner"),
+//     ]);
+
+//     // Combine results
+//     const allResults = [...directResults, ...cpResults];
+
+//     // Sort by step (highest first) and then by name
+//     allResults.sort((a, b) => {
+//       if (b.currentStep !== a.currentStep) {
+//         return b.currentStep - a.currentStep;
+//       }
+//       return a.customerName.localeCompare(b.customerName);
+//     });
+
+//     res.json({
+//       success: true,
+//       data: allResults,
+//       total: allResults.length,
+//       searchTerm: searchTerm,
+//     });
+//   } catch (err) {
+//     console.error("Search error:", err);
+//     res.status(500).json({ success: false, error: err.message });
+//   }
+// });
+
+// // Get lead details by unique ID
+// router.get("/lead/:uniqueId", async (req, res) => {
+//   try {
+//     const { uniqueId } = req.params;
+
+//     if (!uniqueId) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "Unique ID is required",
+//       });
+//     }
+
+//     // Search in both sheets
+//     const [directResults, cpResults] = await Promise.all([
+//       searchInSheet(req.sheets, SPREADSHEET_ID, SHEET_NAME, uniqueId, "Direct"),
+//       searchInSheet(req.sheets, CP_SPREADSHEET_ID, CP_LEAD_SHEET, uniqueId, "Channel Partner"),
+//     ]);
+
+//     const allResults = [...directResults, ...cpResults];
+    
+//     // Find exact match
+//     const exactMatch = allResults.find(
+//       (r) => r.uniqueId.toLowerCase() === uniqueId.toLowerCase()
+//     );
+
+//     if (exactMatch) {
+//       res.json({
+//         success: true,
+//         data: exactMatch,
+//       });
+//     } else {
+//       res.status(404).json({
+//         success: false,
+//         error: "Lead not found",
+//       });
+//     }
+//   } catch (err) {
+//     console.error("Lead fetch error:", err);
+//     res.status(500).json({ success: false, error: err.message });
+//   }
+// });
+
+// module.exports = router;
+
+
+
+
+
+
+
+
+
 const express = require("express");
 const router = express.Router();
 
@@ -19,21 +325,60 @@ function detectLeadStep(row) {
   const projectSelection = getCol(5);
   const leadSource = getCol(6);
 
-  // Step 1: First Follow Up - Column O (14)
+  // Get All Statuses
   const step1Status = getCol(14);
+  const step2Status = getCol(22);
+  const step3Status = getCol(28);
+  const step4Status = getCol(35);
+  const step5Status = getCol(41); // Assuming 41 is booking status if any
+  
+  const allStatusesLower = [
+    step1Status, 
+    step2Status, 
+    step3Status, 
+    step4Status, 
+    step5Status
+  ].map(s => s.toLowerCase());
+
+  // ✅ 1. SABSE PEHLE TERMINAL STATES CHECK KAREIN (Not Interested, Booked)
+  if (allStatusesLower.includes("not interested")) {
+    return {
+      uniqueId, customerName, customerContact, projectSelection, leadSource,
+      currentStep: 0,
+      stepName: "Closed",
+      stepStatus: "Not Interested",
+      stepPlannedDate: "",
+      stepColor: "#ef4444", // Red color
+      stepIcon: "bi-x-circle-fill",
+      canContact: getCol(38) === "No" ? "No" : "Yes"
+    };
+  }
+
+  if (allStatusesLower.includes("booked")) {
+    return {
+      uniqueId, customerName, customerContact, projectSelection, leadSource,
+      currentStep: 0,
+      stepName: "Closed",
+      stepStatus: "Booked",
+      stepPlannedDate: "",
+      stepColor: "#10b981", // Green color
+      stepIcon: "bi-check-circle-fill",
+      canContact: getCol(38) === "No" ? "No" : "Yes"
+    };
+  }
+
+  // Check CNP
+  const step2StatusLower = step2Status.toLowerCase();
+  const isInCNP = step2StatusLower === "call not picked";
+
+  // Step 1
   const isInStep1 =
     step1Status === "" ||
     step1Status.toLowerCase() === "no conversation" ||
     step1Status.toLowerCase() === "next follow up";
 
-  // Step 2: Site Visit
+  // Step 2
   const step2PlannedDate = getCol(20);
-  const step2Status = getCol(22);
-  const step2StatusLower = step2Status.toLowerCase();
-
-  // ✅ NEW: CNP detection
-  const isInCNP = step2StatusLower === "call not picked";
-
   const isInStep2 =
     step2PlannedDate &&
     (step2Status === "" ||
@@ -45,7 +390,6 @@ function detectLeadStep(row) {
   // Step 3
   const step3PlannedDate = getCol(26);
   const step3ActualDate = getCol(27);
-  const step3Status = getCol(28);
   const step3StatusLower = step3Status.toLowerCase();
   const isInStep3 =
     (step3PlannedDate && !step3ActualDate) ||
@@ -56,7 +400,6 @@ function detectLeadStep(row) {
   // Step 4
   const step4PlannedDate = getCol(33);
   const step4ActualDate = getCol(34);
-  const step4Status = getCol(35);
   const step4StatusLower = step4Status.toLowerCase();
   const isInStep4 =
     step4PlannedDate &&
@@ -68,8 +411,8 @@ function detectLeadStep(row) {
   const step5PlannedDate = getCol(38);
   const isInStep5 = step5PlannedDate !== "";
 
-  // ✅ NEW: CP Can/Cannot Contact (Col AM = index 38)
-  const cpCanContactFlag = getCol(38); // "Yes" or "No" in CP sheet
+  // CP Can/Cannot Contact
+  const cpCanContactFlag = getCol(38);
   const canContact = cpCanContactFlag === "No" ? "No" : "Yes";
 
   let currentStep = null;
@@ -79,13 +422,13 @@ function detectLeadStep(row) {
   let stepColor = "";
   let stepIcon = "";
 
-  // ✅ Priority: CNP first (sub-state of Step 2)
+  // Priority Evaluation
   if (isInCNP) {
     currentStep = 2;
     stepName = "Call Not Picked (CNP)";
     stepStatus = "Call Not Picked";
     stepPlannedDate = step2PlannedDate;
-    stepColor = "#0891b2"; // Cyan
+    stepColor = "#0891b2";
     stepIcon = "bi-telephone-x-fill";
   } else if (isInStep1) {
     currentStep = 1;
@@ -124,14 +467,8 @@ function detectLeadStep(row) {
     stepIcon = "bi-check-circle-fill";
   }
 
-  // Completed check
-  const finalStatuses = [
-    "done",
-    "not interested",
-    "negotiation failed",
-    "deal not done",
-    "booked",
-  ];
+  // Other Final Statuses Fallback
+  const finalStatuses = ["done", "negotiation failed", "deal not done"];
   if (step4StatusLower && finalStatuses.includes(step4StatusLower)) {
     currentStep = 0;
     stepName = "Completed/Closed";
@@ -152,7 +489,7 @@ function detectLeadStep(row) {
     stepPlannedDate,
     stepColor,
     stepIcon,
-    canContact, // ✅ NEW
+    canContact,
   };
 }
 
@@ -177,7 +514,6 @@ async function searchInSheet(sheets, spreadsheetId, sheetName, searchTerm, sheet
       const uniqueId = row[1] ? row[1].trim().toLowerCase() : "";
       const leadGenName = row[8] ? row[8].trim().toLowerCase() : "";
 
-      // Search by name, contact, or unique ID
       const isMatch = 
         customerName.includes(searchLower) ||
         customerContact.includes(searchLower) ||
@@ -192,7 +528,7 @@ async function searchInSheet(sheets, spreadsheetId, sheetName, searchTerm, sheet
             ...leadInfo,
             rowIndex: index + 8,
             sheetName: sheetName,
-            sheetType: sheetType, // "Direct" or "Channel Partner"
+            sheetType: sheetType, 
             spreadsheetId: spreadsheetId,
           });
         }
@@ -223,16 +559,13 @@ router.get("/search", async (req, res) => {
 
     const searchTerm = q.trim();
 
-    // Search in both sheets
     const [directResults, cpResults] = await Promise.all([
       searchInSheet(req.sheets, SPREADSHEET_ID, SHEET_NAME, searchTerm, "Direct"),
       searchInSheet(req.sheets, CP_SPREADSHEET_ID, CP_LEAD_SHEET, searchTerm, "Channel Partner"),
     ]);
 
-    // Combine results
     const allResults = [...directResults, ...cpResults];
 
-    // Sort by step (highest first) and then by name
     allResults.sort((a, b) => {
       if (b.currentStep !== a.currentStep) {
         return b.currentStep - a.currentStep;
@@ -252,7 +585,6 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// Get lead details by unique ID
 router.get("/lead/:uniqueId", async (req, res) => {
   try {
     const { uniqueId } = req.params;
@@ -264,7 +596,6 @@ router.get("/lead/:uniqueId", async (req, res) => {
       });
     }
 
-    // Search in both sheets
     const [directResults, cpResults] = await Promise.all([
       searchInSheet(req.sheets, SPREADSHEET_ID, SHEET_NAME, uniqueId, "Direct"),
       searchInSheet(req.sheets, CP_SPREADSHEET_ID, CP_LEAD_SHEET, uniqueId, "Channel Partner"),
@@ -272,7 +603,6 @@ router.get("/lead/:uniqueId", async (req, res) => {
 
     const allResults = [...directResults, ...cpResults];
     
-    // Find exact match
     const exactMatch = allResults.find(
       (r) => r.uniqueId.toLowerCase() === uniqueId.toLowerCase()
     );

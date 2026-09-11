@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  
   // ✅ Fixed Logout function
   const handleLogout = () => {
     // 1. Clear API auth

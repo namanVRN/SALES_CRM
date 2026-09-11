@@ -707,6 +707,8 @@ function AfterFieldVisitFollowUp() {
                       <option value="all">All BDMs</option>
                       <option value="BDM4">BDM4 - Ranjeet Gour</option>
                       <option value="BDM5">BDM5 - Amit Rohar</option>
+                      <option value="BDM8">BDM8 - Ayush Dixit</option>
+                      <option value="BDM9">BDM9 - Rohit Kumar</option>
                     </select>
                   </div>
                 )}
