@@ -229,7 +229,9 @@ function AfterFieldVisitFollowUp() {
       return { bg: "#fef3c7", color: "#92400e", border: "#fcd34d" };
     if (d === "Mohan Sir")
       return { bg: "#e0e7ff", color: "#3730a3", border: "#a5b4fc" };
-    if (d === "BDM7")
+    if (d === "BDM8")
+      return { bg: "#fef9c3", color: "#854d0e", border: "#facc15" };
+      if (d === "BDM9")
       return { bg: "#fef9c3", color: "#854d0e", border: "#facc15" };
     return { bg: "#f3f4f6", color: "#374151", border: "#d1d5db" };
   };
@@ -238,7 +240,8 @@ function AfterFieldVisitFollowUp() {
     if (fsrDoer === "BDM4") return "Ranjeet Gour";
     if (fsrDoer === "BDM5") return "Amit Rohar";
     if (fsrDoer === "Varun Sir") return "Varun Sir";
-    if (fsrDoer === "BDM7") return "Ayush Sahu";
+    if (fsrDoer === "BDM8") return "Ayush Dixit";
+    if (fsrDoer === "BDM9") return "Rohit Kumar";
     if(fsrDoer === "Mohan Sir") return "Mohan Sir";
     return fsrDoer || "-";
   };

@@ -251,6 +251,8 @@ const handleDateTimeChange = (field, value) => {
       return { bg: "#ecfdf5", color: "#065f46", border: "#6ee7b7" };
     if (d === "BDM7")
     return { bg: "#f3e8ff", color: "#6b21a8", border: "#c084fc" };
+   if (d === "BDM9")
+    return { bg: "#f3e8ff", color: "#6b21a8", border: "#c084fc" };
     if (d === "Varun Sir")
       return { bg: "#fef3c7", color: "#92400e", border: "#fcd34d" };
     if (d === "Mohan Sir")
@@ -264,7 +266,8 @@ const handleDateTimeChange = (field, value) => {
       user?.email === "bdm1@company.com" ||
       user?.email === "bdm2@company.com" ||
       user?.email === "bdm6@company.com" ||
-      user?.email === "bdm7@company.com";
+      user?.email === "bdm7@company.com"; 
+      user?.email === "bdm9@company.com"; 
     setActionType(cannotMarkDone ? "" : "done");
     setFormData({
       status: cannotMarkDone ? "" : "Done",
@@ -297,6 +300,7 @@ const handleDateTimeChange = (field, value) => {
       user?.email === "bdm2@company.com" ||
       user?.email === "bdm6@company.com" ||
       user?.email === "bdm7@company.com";
+      user?.email === "bdm9@company.com";
     if (cannotMarkDone && actionType === "done") {
       toast.error("⛔ आप 'Mark as Done' नहीं कर सकते!");
       return;
