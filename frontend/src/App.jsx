@@ -33,6 +33,7 @@ import CPMeetingCannotContact from "./cpNbd/CPCannotContact/CpStepFour.jsx";
 import FSRPage from "./pages/FSRPage.jsx";
 import CNPLeads from "./Nbd/CNPLeads.jsx";
 import BirthdayPopup from "./components/BirthdayPopup";
+import CrrFollowup from "./pages/CrrFollowup";
 
 function App() {
   const { user } = useAuth();
@@ -232,6 +233,15 @@ function App() {
           }
         />
 
+        <Route
+  path="/channel-partner/crr-followup"
+  element={
+    <PrivateRoute>
+      <CrrFollowup />
+    </PrivateRoute>
+  }
+/>
+
         {/* ============================================ */}
         {/* PROCESS ROUTES */}
         {/* ============================================ */}
@@ -315,6 +325,8 @@ function App() {
             </PrivateRoute>
           }
         />
+
+
 
         {/* ============================================ */}
         {/* CATCH ALL - Redirect to Dashboard */}

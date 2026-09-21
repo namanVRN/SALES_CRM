@@ -116,6 +116,7 @@ const fullKittingRoutes = require("./routes/meetings/fullKittingRoutes");
 const meetingsSubRoutes = require("./routes/meetings/meetingsSubRoutes");
 const agreementRoutes = require("./routes/meetings/agreementRoutes");
 const birthdayRoutes = require("./routes/cp/birthdayRoutes");
+const cpCrrFollowupRoutes = require("./routes/cp/cpCrrFollowupRoutes");
 
 app.use("/api/auth", attachGoogleClients, authRoutes);
 app.use("/api/leads", attachGoogleClients, protect, nbdinRoutes);
@@ -138,6 +139,7 @@ app.use("/api/call-to-broker", attachGoogleClients, protect, callToBrokerRoutes)
 app.use("/api/meetings/full-kitting", attachGoogleClients, fullKittingRoutes);
 app.use("/api/meetings/meetings-sub", attachGoogleClients, meetingsSubRoutes);
 app.use("/api/meetings/agreement", attachGoogleClients, agreementRoutes);
+app.use("/api/cp/crr-followup", attachGoogleClients, cpCrrFollowupRoutes);
 
 // ============================================
 // Warmup endpoint

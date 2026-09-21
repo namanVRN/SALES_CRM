@@ -31,4 +31,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+
+export const fetchCrrFollowupList = async () => {
+  const response = await api.get("/cp/crr-followup/list");
+  return response.data;
+};
+
+export const markCrrFollowupDone = async (payload) => {
+  const response = await api.post("/cp/crr-followup/done", payload);
+  return response.data;
+};
+
 export default api;
