@@ -100,6 +100,10 @@ function getFSRCode(user) {
     "varun@company.com": "Varun Sir",
     "bdm8@company.com": "BDM8",
     "bdm9@company.com": "BDM9",
+    "bdm11@company.com": "BDM11",
+    "bdm12@company.com": "BDM12",
+     "bdm13@company.com": "BDM13",
+    "bdm14@company.com": "BDM14",
   };
   return m[user.email?.toLowerCase()] || null;
 }
@@ -116,6 +120,10 @@ function getDoerTag(user) {
     "bdm7@company.com": "BDM7",
     "bdm8@company.com": "BDM8",
     "bdm9@company.com": "BDM9",
+    "bdm11@company.com": "BDM11",
+    "bdm12@company.com": "BDM12",
+     "bdm13@company.com": "BDM13",
+    "bdm14@company.com": "BDM14",
     "varun@company.com": "Varun Sir",
     "mohan@company.com": "Mohan Sir",
   };
