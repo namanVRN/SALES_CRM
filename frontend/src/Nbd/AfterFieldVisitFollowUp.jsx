@@ -244,6 +244,8 @@ function AfterFieldVisitFollowUp() {
     if (fsrDoer === "BDM9") return "Pravesh Kumar";
     if (fsrDoer === "BDM11") return "kunal Kumar";
     if (fsrDoer === "BDM12") return "Anil Gour";
+    if (fsrDoer === "BDM13") return "Ankit Patel";
+    if (fsrDoer === "BDM14") return "Ajay Prajapati";
     if(fsrDoer === "Mohan Sir") return "Mohan Sir";
     return fsrDoer || "-";
   };
@@ -716,6 +718,8 @@ function AfterFieldVisitFollowUp() {
                       <option value="BDM9">BDM9 - Pravesh Kumar</option>
                       <option value="BDM11">BDM11 - kunal Kumar</option>
                       <option value="BDM12">BDM12 - Anil Gour</option>
+                      <option value="BDM13">BDM13 - Ankit Patel</option>
+                      <option value="BDM14">BDM14 - Ajay Prajapati</option>
                     </select>
                   </div>
                 )}

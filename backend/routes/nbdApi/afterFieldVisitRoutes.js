@@ -56,6 +56,8 @@ function getDoerTag(user) {
     "bdm9@company.com": "BDM9",
     "bdm11@company.com": "BDM11",
     "bdm12@company.com": "BDM12",
+    "bdm13@company.com": "BDM13",
+    "bdm14@company.com": "BDM14",
   };
   return m[user.email?.toLowerCase()] || null;
 }
@@ -64,7 +66,8 @@ function getDoerTag(user) {
 function getFSRDoerTag(user) {
   if (!user) return null;
   if (user.assignedModule !== "fsr") return null;
-  const m = { "bdm4@company.com": "BDM4", "bdm5@company.com": "BDM5" ,  "bdm8@company.com": "BDM8","mohan@company.com": "Mohan Sir", "bdm9@company.com": "BDM9","bdm11@company.com": "BDM11","bdm12@company.com": "BDM12"};
+  const m = { "bdm4@company.com": "BDM4", "bdm5@company.com": "BDM5" ,  "bdm8@company.com": "BDM8","mohan@company.com": "Mohan Sir", "bdm9@company.com": "BDM9","bdm11@company.com": "BDM11","bdm12@company.com": "BDM12","bdm13@company.com": "BDM13",
+    "bdm14@company.com": "BDM14",};
   return m[user.email?.toLowerCase()] || null;
 }
 
