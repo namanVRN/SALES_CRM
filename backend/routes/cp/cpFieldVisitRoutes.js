@@ -3,6 +3,17 @@ const router = express.Router();
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const CP_SHEET_NAME = "Channel Partner Lead FMS";
+const FSR_OPTIONS = new Set([
+  "BDM4",
+  "BDM5",
+  "BDM8",
+  "BDM9",
+  "BDM11",
+  "BDM12",
+  "BDM13",
+  "BDM14",
+  "Self",
+]);
 
 // ======================================================
 // HELPERS
@@ -160,7 +171,13 @@ router.get("/cannot-contact/list", async (req, res) => {
 
 router.post("/can-contact/update", async (req, res) => {
   try {
-    const { rowIndex, status, remarks, rescheduleDate } = req.body;
+    const { rowIndex, status, remarks, rescheduleDate, fsr } = req.body;
+    const isDone = (!status || status === "Done") && !rescheduleDate;
+    const fsrValue = typeof fsr === "string" ? fsr.trim() : "";
+
+    if (isDone && !FSR_OPTIONS.has(fsrValue)) {
+      return res.status(400).json({ success: false, error: "A valid FSR is required" });
+    }
 
     console.log("📝 CP Can Contact Field Visit Update:", { rowIndex, status, rescheduleDate, remarks });
 
@@ -232,6 +249,12 @@ router.post("/can-contact/update", async (req, res) => {
         range: `'${CP_SHEET_NAME}'!W${rowIndex}`,
         values: [[status || "Done"]],
       });
+      if (isDone) {
+        updates.push({
+          range: `'${CP_SHEET_NAME}'!AN${rowIndex}`,
+          values: [[fsrValue]],
+        });
+      }
     }
 
     // Remarks
@@ -272,7 +295,13 @@ router.post("/can-contact/update", async (req, res) => {
 
 router.post("/cannot-contact/update", async (req, res) => {
   try {
-    const { rowIndex, status, remarks, rescheduleDate } = req.body;
+    const { rowIndex, status, remarks, rescheduleDate, fsr } = req.body;
+    const isDone = (!status || status === "Done") && !rescheduleDate;
+    const fsrValue = typeof fsr === "string" ? fsr.trim() : "";
+
+    if (isDone && !FSR_OPTIONS.has(fsrValue)) {
+      return res.status(400).json({ success: false, error: "A valid FSR is required" });
+    }
 
     console.log("📝 CP Cannot Contact Field Visit Update:", { rowIndex, status, rescheduleDate, remarks });
 
@@ -343,6 +372,12 @@ router.post("/cannot-contact/update", async (req, res) => {
         range: `'${CP_SHEET_NAME}'!W${rowIndex}`,
         values: [[status || "Done"]],
       });
+      if (isDone) {
+        updates.push({
+          range: `'${CP_SHEET_NAME}'!AN${rowIndex}`,
+          values: [[fsrValue]],
+        });
+      }
     }
 
     // Remarks

@@ -21,6 +21,7 @@ function CPFieldVisitCannotContact() {
     remarks: "",
     rescheduleDate: "",
     importantNote: "",
+    fsr: "",
   });
   const [filters, setFilters] = useState({
     plannedDateFrom: "",
@@ -130,6 +131,7 @@ function CPFieldVisitCannotContact() {
       remarks: "",
       rescheduleDate: "",
       importantNote: lead.importantNote || "",
+      fsr: "",
     });
     setShowModal(true);
   };
@@ -142,6 +144,7 @@ function CPFieldVisitCannotContact() {
       remarks: "",
       rescheduleDate: "",
       importantNote: "",
+      fsr: "",
     });
   };
 
@@ -155,6 +158,10 @@ function CPFieldVisitCannotContact() {
       toast.error("Please select next planned date.");
       return;
     }
+    if (actionType === "done" && !formData.fsr) {
+      toast.error("Please select an FSR.");
+      return;
+    }
 
     const payload = {
       sheetName: selectedLead.sheetName,
@@ -164,6 +171,7 @@ function CPFieldVisitCannotContact() {
 
     if (actionType === "done") {
       payload.status = "Done";
+      payload.fsr = formData.fsr;
     } else if (actionType === "reschedule") {
       payload.rescheduleDate = formData.rescheduleDate;
     } else if (actionType === "not-interested") {
@@ -967,6 +975,35 @@ function CPFieldVisitCannotContact() {
                           min={new Date().toISOString().split("T")[0]}
                           style={{ color: "#000", background: "#fff" }}
                         />
+                      </div>
+                    </div>
+                  )}
+
+                  {actionType === "done" && (
+                    <div className="form-section">
+                      <label className="form-label-custom" htmlFor="visit-fsr">
+                        FSR <span className="required">*</span>
+                      </label>
+                      <div className="input-wrapper">
+                        <select
+                          id="visit-fsr"
+                          className="form-input-custom"
+                          value={formData.fsr}
+                          onChange={(e) =>
+                            setFormData({ ...formData, fsr: e.target.value })
+                          }
+                        >
+                          <option value="">Select FSR</option>
+                          <option value="BDM4">BDM4 - Ranjeet Gour</option>
+                          <option value="BDM5">BDM5 - Amit Rohar</option>
+                          <option value="BDM8">BDM8 - Ayush Dixit</option>
+                          <option value="BDM9">BDM9 - Pravesh Kumar</option>
+                          <option value="BDM11">BDM11 - kunal Kumar</option>
+                          <option value="BDM12">BDM12 - Anil Gour</option>
+                          <option value="BDM13">BDM13 - Ankit Patel</option>
+                          <option value="BDM14">BDM14 - Ajay Prajapati</option>
+                          <option value="Self">Self</option>
+                        </select>
                       </div>
                     </div>
                   )}
