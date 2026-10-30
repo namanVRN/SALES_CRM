@@ -643,8 +643,8 @@ function CNPLeads() {
                         <option value="BDM2">
                           BDM2 - Harshita Vishwakarma
                         </option>
-                        <option value="BDM6">BDM6 - Sanskriti Tiwari</option>
-                        <option value="BDM7">BDM7 - Ritu Gahlot</option>
+                        <option value="BDM6">BDM6 - Sanya Jaiswani</option>
+                        <option value="BDM7">BDM7 - Nisha Gupta</option>
                         <option value="Varun Sir">Varun Sir</option>
                         <option value="Mohan Sir">Mohan Sir</option>
                       </select>
@@ -940,10 +940,10 @@ function CNPLeads() {
                                     BDM2 - Harshita Vishwakarma
                                   </option>
                                   <option value="BDM6">
-                                    BDM6 - Sanskriti Tiwari
+                                    BDM6 - Sanya Jaiswani
                                   </option>
                                   <option value="BDM7">
-                                    BDM7 - Ritu Gahlot
+                                    BDM7 - Nisha Gupta
                                   </option>
                                   <option value="Varun Sir">Varun Sir</option>
                                   <option value="Mohan Sir">Mohan Sir</option>
