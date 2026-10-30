@@ -742,8 +742,8 @@ function NBDIN() {
                       <option value="all">All BDMs</option>
                       <option value="BDM1">BDM1 - Vijaya Rajput</option>
                       <option value="BDM2">BDM2 - Harshita Vishwakarma</option>
-                      <option value="BDM6">BDM6 - Sanskriti tiwari</option>
-                      <option value="BDM7">BDM7 - Ritu Gahlot</option>
+                      <option value="BDM6">BDM6 - Sanya Jaiswani</option>
+                      <option value="BDM7">BDM7 - Nisha Gupta</option>
                       <option value="Varun Sir">Varun Sir</option>
                       <option value="Mohan Sir">Mohan Sir</option>
                     </select>
@@ -1051,8 +1051,8 @@ function NBDIN() {
                               >
                                 <option value="BDM1">BDM1 - Vijya Rajput</option>
                                 <option value="BDM2">BDM2 - Harshita Vishwakarma</option>
-                                <option value="BDM6">BDM6 - Sanskriti Tiwari</option>
-                                <option value="BDM7">BDM7 - Ritu Gahlot</option>
+                                <option value="BDM6">BDM6 - Sanya Jaiswani</option>
+                                <option value="BDM7">BDM7 - Nisha Gupta</option>
                                 <option value="Varun Sir">Varun Sir</option>
                                 <option value="Mohan Sir">Mohan Sir</option>
                               </select>
