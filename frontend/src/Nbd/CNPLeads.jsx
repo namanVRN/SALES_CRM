@@ -54,9 +54,9 @@ function CNPLeads() {
     queryKey: ["cnpLeads"],
     queryFn: fetchCNPData,
     select: (res) => res?.data || [],
-      staleTime: 1000 * 30,        // ✅ 30 seconds only
-  refetchOnWindowFocus: true,   // ✅ Refresh when user comes back to tab
-  refetchInterval: 1000 * 60,   // ✅ Auto-refresh every 1 minute
+    staleTime: 1000 * 30,        // ✅ 30 seconds only
+    refetchOnWindowFocus: true,   // ✅ Refresh when user comes back to tab
+    refetchInterval: 1000 * 60,   // ✅ Auto-refresh every 1 minute
 
   });
 
@@ -206,8 +206,8 @@ function CNPLeads() {
     onError: (e) => {
       toast.error(
         e?.response?.data?.message ||
-          e?.response?.data?.error ||
-          "Failed to update",
+        e?.response?.data?.error ||
+        "Failed to update",
       );
     },
   });
@@ -343,18 +343,18 @@ function CNPLeads() {
       bdmFilter: "all",
     });
 
-    const getSourceBadge = (s) => {
-  const l = s?.toLowerCase() || "";
-  if (l.includes("channel") || l.includes("partner") || l.includes("cp"))
-    return <span className="source-tag channel">Channel Partner</span>;
-  else if (
-    l.includes("Social Media".toLowerCase()) ||
-    l.includes("social".toLowerCase()) ||
-    l.includes("media".toLowerCase())
-  )
-    return <span className="source-tag social">Social Media</span>;
-  return <span className="source-tag direct">Direct</span>;
-};
+  const getSourceBadge = (s) => {
+    const l = s?.toLowerCase() || "";
+    if (l.includes("channel") || l.includes("partner") || l.includes("cp"))
+      return <span className="source-tag channel">Channel Partner</span>;
+    else if (
+      l.includes("Social Media".toLowerCase()) ||
+      l.includes("social".toLowerCase()) ||
+      l.includes("media".toLowerCase())
+    )
+      return <span className="source-tag social">Social Media</span>;
+    return <span className="source-tag direct">Direct</span>;
+  };
 
   const getDoerBadgeColor = (d) => {
     if (d === "BDM1")
@@ -363,6 +363,8 @@ function CNPLeads() {
       return { bg: "#fce7f3", color: "#9d174d", border: "#f9a8d4" };
     if (d === "BDM6")
       return { bg: "#ecfdf5", color: "#065f46", border: "#6ee7b7" };
+     if (d === "BDM15")
+    return { bg: "#f3e8ff", color: "#005a78", border: "#084a46" };
     if (d === "Varun Sir")
       return { bg: "#fef3c7", color: "#92400e", border: "#fcd34d" };
     if (d === "Mohan Sir")
@@ -618,38 +620,39 @@ function CNPLeads() {
                   </div>
                   {(user?.role === "admin" ||
                     user?.assignedModule === "all") && (
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <label>BDM:</label>
-                      <select
-                        value={filters.bdmFilter}
-                        onChange={(e) =>
-                          setFilters((p) => ({
-                            ...p,
-                            bdmFilter: e.target.value,
-                          }))
-                        }
-                        style={{
-                          padding: "10px 14px",
-                          borderRadius: "8px",
-                          border: "1px solid #e5e7eb",
-                          fontSize: "14px",
-                          outline: "none",
-                          minWidth: "160px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <option value="all">All BDMs</option>
-                        <option value="BDM1">BDM1 - Vijaya Rajput</option>
-                        <option value="BDM2">
-                          BDM2 - Harshita Vishwakarma
-                        </option>
-                        <option value="BDM6">BDM6 - Sanya Jaiswani</option>
-                        <option value="BDM7">BDM7 - Nisha Gupta</option>
-                        <option value="Varun Sir">Varun Sir</option>
-                        <option value="Mohan Sir">Mohan Sir</option>
-                      </select>
-                    </div>
-                  )}
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <label>BDM:</label>
+                        <select
+                          value={filters.bdmFilter}
+                          onChange={(e) =>
+                            setFilters((p) => ({
+                              ...p,
+                              bdmFilter: e.target.value,
+                            }))
+                          }
+                          style={{
+                            padding: "10px 14px",
+                            borderRadius: "8px",
+                            border: "1px solid #e5e7eb",
+                            fontSize: "14px",
+                            outline: "none",
+                            minWidth: "160px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <option value="all">All BDMs</option>
+                          <option value="BDM1">BDM1 - Vijaya Rajput</option>
+                          <option value="BDM2">
+                            BDM2 - Harshita Vishwakarma
+                          </option>
+                          <option value="BDM6">BDM6 - Sanya Jaiswani</option>
+                          <option value="BDM7">BDM7 - Nisha Gupta</option>
+                          <option value="BDM15">BDM15 - Deepti Chodhary</option>
+                          <option value="Varun Sir">Varun Sir</option>
+                          <option value="Mohan Sir">Mohan Sir</option>
+                        </select>
+                      </div>
+                    )}
                 </div>
               </div>
               {isAnyFilterActive && (
@@ -944,6 +947,9 @@ function CNPLeads() {
                                   </option>
                                   <option value="BDM7">
                                     BDM7 - Nisha Gupta
+                                  </option>
+                                  <option value="BDM15">
+                                    BDM15 - Deepti Chodhary
                                   </option>
                                   <option value="Varun Sir">Varun Sir</option>
                                   <option value="Mohan Sir">Mohan Sir</option>
