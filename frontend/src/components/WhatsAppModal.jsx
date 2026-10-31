@@ -112,23 +112,23 @@ const buildWaTemplate = (projectName, bdmName) => {
   msg += "Greetings from Signature Group.\n\n";
   msg += `We are pleased to share details of our upcoming ${proj.type} project,\n`;
   msg += `*${projectName}*\n\n`;
-  msg += `📍 Project Location: ${proj.location}\n\n`;
-  msg += "✅ Key Project Highlights:\n";
+  msg += ` Project Location: ${proj.location}\n\n`;
+  msg += " Key Project Highlights:\n";
   msg += "• T&CP Approved Layout\n";
   msg += "• Well-planned internal roads and open spaces\n";
   msg += "• Ideal for residential development and long-term investment\n\n";
 
   if (proj.layout || proj.brochure || proj.video) {
-    msg += "📎 Project Resources:\n";
-    if (proj.layout) msg += `📐 Layout: ${proj.layout}\n`;
-    if (proj.brochure) msg += `📄 Brochure: ${proj.brochure}\n`;
-    if (proj.video) msg += `🎥 Video: ${proj.video}\n`;
+    msg += " Project Resources:\n";
+    if (proj.layout) msg += ` Layout: ${proj.layout}\n`;
+    if (proj.brochure) msg += ` Brochure: ${proj.brochure}\n`;
+    if (proj.video) msg += ` Video: ${proj.video}\n`;
     msg += "\n";
   }
 
-  msg += "📞 For further details or to schedule a site visit:\n";
-  msg += "9201837706\n\n";
-  msg += "🕘 Office Hours: 9:00 AM – 6:00 PM\n\n";
+  msg += " For further details or to schedule a site visit:\n";
+  msg += "\n\n";
+  msg += " Office Hours: 9:00 AM – 6:00 PM\n\n";
   msg += "Warm regards,\n";
   msg += `${bdmName}\n`;
   msg += "Business Development Manager";
