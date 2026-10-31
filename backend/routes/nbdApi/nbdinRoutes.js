@@ -393,7 +393,7 @@ router.post("/nbdin/assign", async (req, res) => {
       return res.status(400).json({ success: false, error: "Missing fields" });
 
     // ✅ Varun Sir and Mohan Sir added to allowed list
-    if (!["BDM1", "BDM2", "BDM6", "BDM7", "Varun Sir", "Mohan Sir"].includes(assignTo))
+    if (!["BDM1", "BDM2", "BDM6", "BDM7","BDM15", "Varun Sir", "Mohan Sir"].includes(assignTo))
       return res
         .status(400)
         .json({ success: false, error: "Invalid assignTo" });
