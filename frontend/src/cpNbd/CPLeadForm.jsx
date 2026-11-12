@@ -1143,11 +1143,9 @@ const STATUS_OPTIONS = [
 const PROJECT_OPTIONS = [
   "Ultimate Heights",
   "My City",
-  "Signature S 9",
-  "Signature One",
   "Ultimate English Villas",
   "SIGNATURE HERITAGE",
-  "Ultimate Sky Villa",
+  "Shivayera Golden",
   "Signature Paradise",
 ];
 
