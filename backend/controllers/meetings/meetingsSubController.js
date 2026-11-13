@@ -53,6 +53,7 @@ exports.getMeetingsSub = async (req, res) => {
       const reviseDate  = row[11];  // L
       const reviseCount = row[12];  // M
       const remark      = row[13] || ""; // ✅ NEW — N (Remark)
+      const channelPartnerName = (row[10] || "").toString().trim(); // ✅ K (Channel Partner Name)
 
       const hasPlanned = planned && planned.toString().trim() !== "";
       const hasActual  = actual && actual.toString().trim() !== "";
@@ -72,6 +73,7 @@ exports.getMeetingsSub = async (req, res) => {
         status:      status || "",
         reviseCount: reviseCount || "0",
         remark,  // ✅ NEW — pass existing remarks to frontend
+        channelPartnerName, // ✅ NEW — prefill CP name in frontend
       });
     });
 
@@ -120,6 +122,12 @@ exports.submitMeetingsSubAction = async (req, res) => {
     let newReviseDate  = existing[3] || "";
     let actualValue    = existing[0] || "";
 
+    // ✅ NEW — Keep existing CP name (K) if user didn't send a new one
+    const existingCPName = (existing[2] || "").toString().trim();
+    const finalCPName =
+      (channelPartnerName && String(channelPartnerName).trim()) ||
+      existingCPName;
+
     if (status === "Revise") {
       newReviseCount = currentReviseCount + 1;
       newReviseDate  = reviseDate || "";
@@ -166,7 +174,7 @@ exports.submitMeetingsSubAction = async (req, res) => {
           [
             actualValue,
             status,
-            channelPartnerName || "",
+            finalCPName, // ✅ CHANGED — never wipe existing CP name
             newReviseDate,
             newReviseCount,
             remarkToSave,
@@ -200,7 +208,7 @@ exports.submitMeetingsSubAction = async (req, res) => {
                 "Meetings Sub - Not Interested",
                 uniqueId, firmName, contact, locality,
                 "", "",
-                channelPartnerName || "",
+                finalCPName, // ✅ CHANGED
                 notInterestedReason,
                 req.user?.email || "",
               ],

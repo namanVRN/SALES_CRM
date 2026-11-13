@@ -57,7 +57,8 @@ function Meetings() {
     setSelectedRow(row);
     setFormData({
       status: "",
-      channelPartnerName: "",
+      // ✅ Prefill if channel partner name already exists in the sheet
+      channelPartnerName: row.channelPartnerName || "",
       reviseDate: "",
       reviseCount: row.reviseCount || "1",
       remark: "",
@@ -767,6 +768,21 @@ function Meetings() {
                         style={{ color: "#6366f1" }}
                       ></i>
                       Name of Channel Partner
+                      {selectedRow?.channelPartnerName && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#065f46",
+                            marginLeft: "8px",
+                            fontWeight: "normal",
+                            background: "#d1fae5",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          Already Saved
+                        </span>
+                      )}
                     </label>
 
                     <div className="input-wrapper">
@@ -787,6 +803,18 @@ function Meetings() {
                         }
                       />
                     </div>
+                    {selectedRow?.channelPartnerName && (
+                      <small
+                        style={{
+                          display: "block",
+                          marginTop: "6px",
+                          color: "#6b7280",
+                          fontSize: "12px",
+                        }}
+                      >
+                        Name already saved. Edit only if it has changed.
+                      </small>
+                    )}
                   </div>
 
                   {/* Revise Date - Shows when Revise is selected */}
