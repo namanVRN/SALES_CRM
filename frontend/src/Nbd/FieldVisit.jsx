@@ -1394,7 +1394,8 @@ const handleDateTimeChange = (field, value) => {
                       user?.email === "bdm1@company.com" ||
                       user?.email === "bdm2@company.com" ||
                       user?.email === "bdm6@company.com" ||
-                      user?.email === "bdm7@company.com"
+                      user?.email === "bdm7@company.com"||
+                      user?.email === "bdm15@company.com"
                     ) && (
                       <div
                         onClick={() => {
