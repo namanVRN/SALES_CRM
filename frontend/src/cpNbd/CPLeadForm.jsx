@@ -1126,6 +1126,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchCPLeadFormData, updateCPLeadFormData } from "../services/cpApi";
 import Layout from "../components/Layout";
 import SkeletonTable from "../components/SkeletonTable";
+import ProofFileInput from "../components/ProofFileInput";
+import { toast } from "react-toastify";
 import "../assets/styles/TablePages.css";
 import "../assets/styles/ActionModal.css";
 
@@ -1143,9 +1145,11 @@ const STATUS_OPTIONS = [
 const PROJECT_OPTIONS = [
   "Ultimate Heights",
   "My City",
+  "Signature S 9",
+  "Signature One",
   "Ultimate English Villas",
   "SIGNATURE HERITAGE",
-  "Shivayera Golden",
+  "Ultimate Sky Villa",
   "Signature Paradise",
 ];
 
@@ -1185,6 +1189,8 @@ function CPLeadForm() {
     remarks: "",
     notQualifiedReason: "",
     canContact: "",
+    niReason: "",    // Not Interested reason → sheet "Reason" column
+    proofFile: null, // attached file → Drive → sheet "Link" column
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -1361,6 +1367,12 @@ function CPLeadForm() {
 
     if (!validateForm()) return;
 
+    // ✅ Reason is required for Not Interested
+    if (formData.status === "Not Interested" && !formData.niReason?.trim()) {
+      toast.error("Please enter a reason for Not Interested");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const updateData = {
@@ -1379,6 +1391,8 @@ function CPLeadForm() {
       canContact:          formData.canContact          || "Yes",
       currentFollowUpCount: selectedLead.followUpCount  || 0,
       currentPlannedDate:  selectedLead.plannedDate     || "", // ✅ No Connection Yet ke liye
+      notInterestedReason: formData.niReason            || "", // ✅ sheet "Reason" column
+      proofFile:           formData.proofFile           || null, // ✅ attached file
     };
 
     try {
@@ -2078,8 +2092,8 @@ function CPLeadForm() {
                           <i className="bi bi-emoji-frown"></i> Not Interested
                         </div>
                         <p className="section-note">
-                          No additional details required. Add remarks if
-                          needed.
+                          Please add the reason below. You can also attach a
+                          file (image / voice message).
                         </p>
                       </div>
                     )}
@@ -2209,6 +2223,21 @@ function CPLeadForm() {
                           rows="3"
                         ></textarea>
                       </div>
+                    )}
+
+                    {/* ✅ Not Interested reason + file attachment */}
+                    {formData.status === "Not Interested" && (
+                      <ProofFileInput
+                        value={formData.proofFile}
+                        onChange={(file) =>
+                          setFormData((prev) => ({ ...prev, proofFile: file }))
+                        }
+                        reason={formData.niReason}
+                        onReasonChange={(text) =>
+                          setFormData((prev) => ({ ...prev, niReason: text }))
+                        }
+                        reasonRequired={true}
+                      />
                     )}
                   </div>
                 </div>

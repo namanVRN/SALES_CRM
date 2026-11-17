@@ -1,8 +1,3 @@
-
-
-  
-
-
 // const express = require("express");
 // const router = express.Router();
 
@@ -349,6 +344,82 @@ const router = express.Router();
 const CP_SPREADSHEET_ID = process.env.CP_LEAD_FORM_SPREADSHEET_ID;
 const CP_LEAD_SHEET = "Channel Partner FMS";
 const DATA_START_ROW = 8;
+
+// ============================================
+// ✅ CP Not Interested (Lead Qualification) → "Not Interested Reasons" tab
+// Tab is in the MAIN spreadsheet (SPREADSHEET_ID), same as NBD.
+// Headers: Timestamp | Step | Unique ID | Customer Name | Contact |
+//          Interested In | Project | Lead Source | Doer | Reason | Updated By | Link
+// ============================================
+const jwt = require("jsonwebtoken");
+const { uploadFileToDrive } = require("../../services/googleDriveService");
+const MAIN_SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+const NOT_INTERESTED_SHEET = "Not Interested Reasons";
+
+function getUserFromToken(req) {
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    return token ? jwt.verify(token, process.env.JWT_SECRET) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function appendToNotInterestedSheet(req, rowNum, stepName, reason, proofFile) {
+  try {
+    // Lead details from "Channel Partner FMS" (same row): B..N
+    const leadRes = await req.sheets.spreadsheets.values.get({
+      spreadsheetId: CP_SPREADSHEET_ID,
+      range: `'${CP_LEAD_SHEET}'!A${rowNum}:N${rowNum}`,
+    });
+    const r = leadRes.data.values?.[0] || [];
+    const user = getUserFromToken(req);
+
+    // Attached file (image / voice message) → Google Drive → link
+    let fileLink = "";
+    if (proofFile && proofFile.data) {
+      try {
+        const buffer = Buffer.from(proofFile.data, "base64");
+        const safeName = String(proofFile.name || "file").replace(/[^\w.\-]/g, "_");
+        fileLink = await uploadFileToDrive(
+          buffer,
+          `NI_${r[1] || "lead"}_${Date.now()}_${safeName}`,
+          proofFile.mimeType,
+        );
+      } catch (e) {
+        console.error("❌ NI file Drive upload failed:", e.message);
+      }
+    }
+
+    await req.sheets.spreadsheets.values.append({
+      spreadsheetId: MAIN_SPREADSHEET_ID,
+      range: `'${NOT_INTERESTED_SHEET}'!A:L`,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: {
+        values: [
+          [
+            getCurrentISTTimestamp(), // Timestamp
+            stepName,                 // Step
+            r[1] || "",               // Unique ID       (B)
+            r[2] || "",               // Customer Name   (C)
+            r[3] || "",               // Contact         (D)
+            r[4] || "",               // Interested In   (E)
+            r[13] || "",              // Project         (N)
+            r[5] || "",               // Lead Source → Lead Gen By (F)
+            user?.name || "",         // Doer
+            reason || "",             // Reason
+            user?.email || "",        // Updated By
+            fileLink,                 // Link (Drive file)
+          ],
+        ],
+      },
+    });
+  } catch (error) {
+    console.error("❌ CP Lead Form Not Interested append failed:", error.message);
+  }
+}
+
 
 // ============================================
 // Constants
@@ -742,6 +813,11 @@ router.post("/update", async (req, res) => {
     });
 
     console.log(`✅ Lead updated successfully!`);
+
+    // ✅ CP Not Interested → 'Not Interested Reasons' tab
+    if (status === "Not Interested") {
+      await appendToNotInterestedSheet(req, rowNum, "CP - Lead Qualification", req.body.notInterestedReason || remarks, req.body.proofFile);
+    }
 
     res.json({
       success: true,

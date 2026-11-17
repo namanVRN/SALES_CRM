@@ -2,7 +2,80 @@ const express = require("express");
 const router = express.Router();
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const CP_SHEET_NAME = "Channel Partner Lead FMS"; 
+const CP_SHEET_NAME = "Channel Partner Lead FMS";
+// ============================================
+// ✅ CP Not Interested → "Not Interested Reasons" tab (NBD jaisa hi)
+// Headers: Timestamp | Step | Unique ID | Customer Name | Contact |
+//          Interested In | Project | Lead Source | Doer | Reason | Updated By | Link
+// ============================================
+const jwt = require("jsonwebtoken");
+const { uploadFileToDrive } = require("../../services/googleDriveService");
+const NOT_INTERESTED_SHEET = "Not Interested Reasons";
+
+// CP routes pe login check nahi hai, isliye token se user nikaalo (mile to)
+function getUserFromToken(req) {
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    return token ? jwt.verify(token, process.env.JWT_SECRET) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function appendToNotInterestedSheet(req, rowIndex, stepName, reason, proofFile) {
+  try {
+    // Lead ki details "Channel Partner Lead FMS" ki usi row se (B se G)
+    const leadRes = await req.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${CP_SHEET_NAME}'!A${rowIndex}:G${rowIndex}`,
+    });
+    const r = leadRes.data.values?.[0] || [];
+    const user = getUserFromToken(req);
+
+    // Remark ke neeche chuni gayi file (image / voice msg) → Google Drive → link
+    let fileLink = "";
+    if (proofFile && proofFile.data) {
+      try {
+        const buffer = Buffer.from(proofFile.data, "base64");
+        const safeName = String(proofFile.name || "file").replace(/[^\w.\-]/g, "_");
+        fileLink = await uploadFileToDrive(
+          buffer,
+          `NI_${r[1] || "lead"}_${Date.now()}_${safeName}`,
+          proofFile.mimeType,
+        );
+      } catch (e) {
+        console.error("❌ NI file Drive upload failed:", e.message);
+      }
+    }
+
+    await req.sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${NOT_INTERESTED_SHEET}'!A:L`,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: {
+        values: [
+          [
+            getCurrentTimestamp(), // Timestamp
+            stepName,              // Step
+            r[1] || "",            // Unique ID
+            r[2] || "",            // Customer Name
+            r[3] || "",            // Contact
+            r[4] || "",            // Interested In
+            r[5] || "",            // Project
+            r[6] || "",            // Lead Source
+            user?.name || "",      // Doer
+            reason || "",          // Reason
+            user?.email || "",     // Updated By
+            fileLink,              // Link (Drive file)
+          ],
+        ],
+      },
+    });
+  } catch (error) {
+    console.error("❌ CP Not Interested sheet append failed:", error.message);
+  }
+}
 
 // ============================================
 // Helpers
@@ -66,12 +139,12 @@ async function getFilteredCPLeads(sheets, category) {
     const plannedDate = row[33] ? row[33].trim() : "";         // AH
     const actualDate = row[34] ? row[34].trim() : "";          // AI
     let status = row[35] ? row[35].trim() : "";                // AJ
-    const canContact = row[38] ? row[38].trim() : "";          
+    const canContact = row[38] ? row[38].trim() : "";
 
     // ===== CATEGORY FILTER =====
-   const categoryMatch =
-        (category === "can-contact" && canContact === "Yes") ||
-        (category === "cannot-contact" && (canContact === "No" || canContact ===""));
+    const categoryMatch =
+      (category === "can-contact" && canContact === "Yes") ||
+      (category === "cannot-contact" && (canContact === "No" || canContact === ""));
 
     if (!categoryMatch) return;
 
@@ -258,6 +331,11 @@ router.post("/can-contact/update", async (req, res) => {
       },
     });
 
+    // ✅ CP Not Interested → 'Not Interested Reasons' tab
+    if (status === "Not Interested") {
+      await appendToNotInterestedSheet(req, rowIndex, "CP - Step 4 - Meeting", req.body.notInterestedReason || remarks, req.body.proofFile);
+    }
+
     res.json({
       success: true,
       message: rescheduleDate
@@ -358,6 +436,11 @@ router.post("/cannot-contact/update", async (req, res) => {
         data: updates,
       },
     });
+
+    // ✅ CP Not Interested → 'Not Interested Reasons' tab
+    if (status === "Not Interested") {
+      await appendToNotInterestedSheet(req, rowIndex, "CP - Step 4 - Meeting", req.body.notInterestedReason || remarks, req.body.proofFile);
+    }
 
     res.json({
       success: true,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ProofFileInput from "../../components/ProofFileInput";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchCPCanContactAfterFV,
@@ -147,6 +148,12 @@ function CPAfterFieldVisitFollowUp() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // ✅ Reason is required for Not Interested
+    if (formData.status === "Not Interested" && !formData.niReason?.trim()) {
+      toast.error("Please enter a reason for Not Interested");
+      return;
+    }
+
     if (!formData.status) {
       toast.warning("Please select a status");
       return;
@@ -170,6 +177,8 @@ function CPAfterFieldVisitFollowUp() {
       rowIndex: selectedLead.rowIndex,
       status: formData.status,
       remarks: formData.remarks,
+      proofFile: formData.proofFile || null, // ✅ attached file (image / voice message)
+      notInterestedReason: formData.niReason || "", // ✅ goes to the sheet "Reason" column
       rescheduleDate:
         formData.status === "No conversation" || formData.status === "Next Follow Up"
           ? formData.nextFollowUpDate
@@ -933,6 +942,14 @@ function CPAfterFieldVisitFollowUp() {
                         style={{ color: "#000", borderLeft: "3px solid #f59e0b" }}
                       ></textarea>
                     </div>
+                    {/* ✅ Not Interested reason + file attachment */}
+                    <ProofFileInput
+                      value={formData.proofFile}
+                      onChange={(file) => setFormData({ ...formData, proofFile: file })}
+                      reason={formData.niReason}
+                      onReasonChange={(text) => setFormData({ ...formData, niReason: text })}
+                      reasonRequired={formData.status === "Not Interested"}
+                    />
                   </div>
                 </form>
               </div>

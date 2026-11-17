@@ -10,6 +10,14 @@ const api = axios.create({
   },
 });
 
+// ✅ Send the login token with Lead Form requests
+// (backend uses it for "Doer" / "Updated By" in the Not Interested Reasons sheet)
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("authToken");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 
 export const fetchCPLeadFormData = async () => {
   const response = await api.get("/cp/lead-form/list");

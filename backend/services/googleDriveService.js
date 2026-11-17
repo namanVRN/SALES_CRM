@@ -48,4 +48,40 @@ async function uploadPdfToDrive(fileBuffer, fileName) {
   }
 }
 
-module.exports = { uploadPdfToDrive };
+// ============================================
+// ✅ Koi bhi file (image / voice message / pdf) Drive pe upload karo
+// Same folder me jaati hai jahan Agreement PDFs jaati hain.
+// Return: file ka shareable link (anyone with link → view)
+// ============================================
+async function uploadFileToDrive(fileBuffer, fileName, mimeType) {
+  const drive = await getDrive();
+
+  const bufferStream = new Readable();
+  bufferStream.push(fileBuffer);
+  bufferStream.push(null);
+
+  const response = await drive.files.create({
+    requestBody: {
+      name: fileName,
+      parents: [FOLDER_ID],
+      mimeType: mimeType || "application/octet-stream",
+    },
+    media: {
+      mimeType: mimeType || "application/octet-stream",
+      body: bufferStream,
+    },
+    fields: "id, webViewLink",
+    supportsAllDrives: true,
+  });
+
+  await drive.permissions.create({
+    fileId: response.data.id,
+    requestBody: { role: "reader", type: "anyone" },
+    supportsAllDrives: true,
+  });
+
+  console.log("✅ File uploaded to Drive:", response.data.webViewLink);
+  return response.data.webViewLink;
+}
+
+module.exports = { uploadPdfToDrive, uploadFileToDrive };
