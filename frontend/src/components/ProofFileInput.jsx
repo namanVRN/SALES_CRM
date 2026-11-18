@@ -6,12 +6,26 @@ import { toast } from "react-toastify";
 //  1) "Not Interested Reason" box → saved to the "Reason" column
 //     of the "Not Interested Reasons" sheet tab
 //     (required only when the lead is marked Not Interested)
-//  2) File picker (1 file: image / screenshot / voice message)
+//  2) File picker (1 file: image / PDF / audio (mp3, voice note))
 //     → uploaded to Google Drive → link saved to the "Link" column
 // The file is passed to the parent as: { name, mimeType, size, data (base64) }
 // ============================================================
 
 const MAX_SIZE_MB = 5; // Max file size allowed
+
+// Allowed: image, PDF, audio. Checked in code (not with the "accept" attribute),
+// because Safari on Mac greys out files whose type it does not recognise.
+const ALLOWED_EXT = [
+  "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp",
+  "pdf",
+  "mp3", "mp4", "m4a", "aac", "wav", "ogg", "opus", "amr", "weba", "caf",
+];
+const isAllowedFile = (file) => {
+  const type = (file.type || "").toLowerCase();
+  if (type.startsWith("image/") || type.startsWith("audio/") || type === "application/pdf" || type === "video/mp4") return true;
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  return ALLOWED_EXT.includes(ext);
+};
 
 function ProofFileInput({ value, onChange, reason, onReasonChange, reasonRequired }) {
   const inputRef = useRef(null);
@@ -20,6 +34,12 @@ function ProofFileInput({ value, onChange, reason, onReasonChange, reasonRequire
   const handleSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!isAllowedFile(file)) {
+      toast.error("Only image, PDF or audio files are allowed");
+      e.target.value = "";
+      return;
+    }
 
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       toast.error(`File must be smaller than ${MAX_SIZE_MB} MB`);
@@ -83,14 +103,13 @@ function ProofFileInput({ value, onChange, reason, onReasonChange, reasonRequire
       {/* 2) File (image / voice message) → Google Drive → "Link" column */}
       <label className="form-label-custom">
         <i className="bi bi-paperclip" style={{ color: "#6366f1" }}></i>{" "}
-        Attach File (Image / Voice Message)
+        Attach File (Image / PDF / Audio)
       </label>
 
       {!value ? (
         <input
           ref={inputRef}
           type="file"
-          accept="image/*,audio/*,.opus,.ogg,.m4a,.pdf"
           onChange={handleSelect}
           disabled={reading}
           className="form-input-custom"

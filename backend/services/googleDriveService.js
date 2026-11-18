@@ -1,7 +1,11 @@
 const { getDrive } = require("../config/googleAuth");
 const { Readable } = require("stream");
 
-const FOLDER_ID = "0ACYEbp3qizyBUk9PVA";
+const FOLDER_ID = "0ACYEbp3qizyBUk9PVA"; // Agreement PDFs
+
+// ✅ Not Interested files (image / PDF / audio) → Shared Drive "US_CP_Not_IntrestedReasonImageAudio"
+// Service account (GOOGLE_CLIENT_EMAIL) must be a "Content manager" of this drive.
+const NI_FOLDER_ID = "0AEFmNijqyfETUk9PVA";
 
 async function uploadPdfToDrive(fileBuffer, fileName) {
   try {
@@ -49,8 +53,7 @@ async function uploadPdfToDrive(fileBuffer, fileName) {
 }
 
 // ============================================
-// ✅ Koi bhi file (image / voice message / pdf) Drive pe upload karo
-// Same folder me jaati hai jahan Agreement PDFs jaati hain.
+// ✅ Not Interested file (image / PDF / audio) → NI Shared Drive
 // Return: file ka shareable link (anyone with link → view)
 // ============================================
 async function uploadFileToDrive(fileBuffer, fileName, mimeType) {
@@ -63,7 +66,7 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType) {
   const response = await drive.files.create({
     requestBody: {
       name: fileName,
-      parents: [FOLDER_ID],
+      parents: [NI_FOLDER_ID],
       mimeType: mimeType || "application/octet-stream",
     },
     media: {
