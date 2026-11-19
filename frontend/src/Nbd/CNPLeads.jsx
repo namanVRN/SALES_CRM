@@ -365,6 +365,8 @@ function CNPLeads() {
       return { bg: "#ecfdf5", color: "#065f46", border: "#6ee7b7" };
      if (d === "BDM15")
     return { bg: "#f3e8ff", color: "#005a78", border: "#084a46" };
+  if (d === "BDM16")
+    return { bg: "#f3e8ff", color: "#005a78", border: "#084a46" };
     if (d === "Varun Sir")
       return { bg: "#fef3c7", color: "#92400e", border: "#fcd34d" };
     if (d === "Mohan Sir")
@@ -648,6 +650,7 @@ function CNPLeads() {
                           <option value="BDM6">BDM6 - Sanya Jaiswani</option>
                           <option value="BDM7">BDM7 - Nisha Gupta</option>
                           <option value="BDM15">BDM15 - Deepti Chodhary</option>
+                          <option value="BDM16">BDM16 - Ishita Sharma</option>
                           <option value="Varun Sir">Varun Sir</option>
                           <option value="Mohan Sir">Mohan Sir</option>
                         </select>
@@ -950,6 +953,9 @@ function CNPLeads() {
                                   </option>
                                   <option value="BDM15">
                                     BDM15 - Deepti Chodhary
+                                  </option>
+                                  <option value="BDM16">
+                                    BDM16 - Ishita Sharma
                                   </option>
                                   <option value="Varun Sir">Varun Sir</option>
                                   <option value="Mohan Sir">Mohan Sir</option>

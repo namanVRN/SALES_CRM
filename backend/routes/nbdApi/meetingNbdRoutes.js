@@ -73,6 +73,7 @@ function getDoerTag(user) {
     "bdm13@company.com": "BDM13",
     "bdm14@company.com": "BDM14",
     "bdm15@company.com": "BDM15",
+    "bdm16@company.com": "BDM16",
 
   };
   return m[user.email?.toLowerCase()] || null;
