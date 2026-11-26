@@ -817,11 +817,29 @@
   }
 }
 
-.search-highlight-row {
-  animation: searchHighlight 0.6s ease-in-out 5;
+/* ✅ Navbar search → highlighted lead row in table.
+   Selector is stronger than ".modern-table tbody tr" (rowAppear animation)
+   and ".urgent-visit-row", otherwise the highlight never shows. */
+.modern-table tbody tr.search-highlight-row,
+tr.search-highlight-row {
+  animation: searchRowPulse 0.8s ease-in-out 4;
+  outline: 3px solid #f59e0b;
+  outline-offset: -3px;
   position: relative;
 }
 
-.search-highlight-row td {
-  background-color: rgba(250, 204, 21, 0.1) !important;
+.modern-table tbody tr.search-highlight-row td,
+tr.search-highlight-row td {
+  background-color: #fde68a !important; /* clear yellow */
+}
+
+@keyframes searchRowPulse {
+  0%, 100% {
+    outline-color: #f59e0b;
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
+  50% {
+    outline-color: #d97706;
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.7);
+  }
 }

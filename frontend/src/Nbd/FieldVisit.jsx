@@ -15,10 +15,29 @@ import "../assets/styles/TablePages.css";
 import "../assets/styles/ActionModal.css";
 import WhatsAppModal from "../components/WhatsAppModal";
 
+// ✅ FSR users (USERS sheet → AssignedModule = "fsr"). Only they can mark site visit Done.
+const FSR_LIST = [
+  { email: "bdm4@company.com", code: "BDM4", name: "Ranjeet Gour" },
+  { email: "bdm5@company.com", code: "BDM5", name: "Amit Rohar" },
+  { email: "bdm8@company.com", code: "BDM8", name: "Ayush Dixit" },
+  { email: "bdm9@company.com", code: "BDM9", name: "Pravesh Kumar" },
+  { email: "bdm11@company.com", code: "BDM11", name: "Kunal Kumar" },
+  { email: "bdm12@company.com", code: "BDM12", name: "Anil Gour" },
+  { email: "bdm13@company.com", code: "BDM13", name: "Ankit Patel" },
+  { email: "bdm14@company.com", code: "BDM14", name: "Ajay Prajapati" },
+];
+
 function FieldVisit() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isFSRUser = user?.assignedModule === "fsr";
+  // ✅ Who can "Mark as Done": FSR, Varun Sir, Admin (Admin must pick the FSR)
+  const userEmail = (user?.email || "").toLowerCase();
+  const isAdminUser = user?.role === "admin" || user?.assignedModule === "all";
+  const canMarkDone =
+    isAdminUser ||
+    userEmail === "varun@company.com" ||
+    FSR_LIST.some((f) => f.email === userEmail);
   const location = useLocation();
   const highlightLeadId = location.state?.highlightLeadId || null;
   const fromSearch = location.state?.fromSearch || false;
@@ -266,18 +285,13 @@ const handleDateTimeChange = (field, value) => {
 
   const handleAction = (lead) => {
     setSelectedLead(lead);
-    const cannotMarkDone =
-      user?.email === "bdm1@company.com" ||
-      user?.email === "bdm2@company.com" ||
-      user?.email === "bdm6@company.com" ||
-      user?.email === "bdm7@company.com"; 
-      user?.email === "bdm15@company.com"; 
-    setActionType(cannotMarkDone ? "" : "done");
+    setActionType(canMarkDone ? "done" : "");
     setFormData({
-      status: cannotMarkDone ? "" : "Done",
+      status: canMarkDone ? "Done" : "",
       remarks: "",
       rescheduleDate: "",
       notInterestedReason: "",
+      fsr: "",
     });
     setShowModal(true);
   };
@@ -299,14 +313,12 @@ const handleDateTimeChange = (field, value) => {
       toast.warning("Please select an action first!");
       return;
     }
-    const cannotMarkDone =
-      user?.email === "bdm1@company.com" ||
-      user?.email === "bdm2@company.com" ||
-      user?.email === "bdm6@company.com" ||
-      user?.email === "bdm7@company.com";
-      user?.email === "bdm15@company.com";
-    if (cannotMarkDone && actionType === "done") {
-      toast.error("⛔ आप 'Mark as Done' नहीं कर सकते!");
+    if (!canMarkDone && actionType === "done") {
+      toast.error("⛔ Only FSR can mark the site visit as Done");
+      return;
+    }
+    if (isAdminUser && actionType === "done" && !formData.fsr) {
+      toast.error("Please select the FSR who did the site visit");
       return;
     }
     e.preventDefault();
@@ -424,6 +436,7 @@ const handleDateTimeChange = (field, value) => {
 
     if (actionType === "done") {
       payload.status = "Done";
+      if (isAdminUser) payload.fsr = formData.fsr; // ✅ Admin picks FSR
     } else if (actionType === "reschedule") {
       payload.rescheduleDate = formData.rescheduleDate;
       // ✅ reschedule के लिए status नहीं — rescheduleDate से detect होगा
@@ -638,7 +651,7 @@ const handleDateTimeChange = (field, value) => {
       }
     }, 500);
   }
-}, [rows, highlightLeadId, fromSearch]);
+}, [rows, highlightLeadId, fromSearch, location.state?.searchAt]);
 
   return (
     <Layout
@@ -1394,14 +1407,7 @@ const handleDateTimeChange = (field, value) => {
                       gap: "15px",
                     }}
                   >
-                    {!(
-                      user?.email === "bdm1@company.com" ||
-                      user?.email === "bdm2@company.com" ||
-                      user?.email === "bdm6@company.com" ||
-                      user?.email === "bdm7@company.com"||
-                      user?.email === "bdm15@company.com" ||
-                      user?.email === "bdm16@company.com"
-                    ) && (
+                    {canMarkDone && (
                       <div
                         onClick={() => {
                           setActionType("done");
@@ -1628,6 +1634,32 @@ const handleDateTimeChange = (field, value) => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
+                  {/* ✅ Admin only — choose FSR who did the site visit */}
+                  {isAdminUser && actionType === "done" && (
+                    <div className="form-section">
+                      <label className="form-label-custom" htmlFor="nbd-visit-fsr">
+                        Site Visit By (FSR) <span className="required">*</span>
+                      </label>
+                      <div className="input-wrapper">
+                        <select
+                          id="nbd-visit-fsr"
+                          className="form-input-custom"
+                          value={formData.fsr || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, fsr: e.target.value })
+                          }
+                          style={{ color: "#000", background: "#fff" }}
+                        >
+                          <option value="">Select FSR</option>
+                          {FSR_LIST.map((f) => (
+                            <option key={f.code} value={f.code}>
+                              {f.code} - {f.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                   {actionType === "not-interested" && (
                     <div
                       className="form-section"

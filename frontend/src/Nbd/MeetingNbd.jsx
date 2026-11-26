@@ -413,7 +413,7 @@ function MeetingNbd() {
         }
       }, 500);
     }
-  }, [rows, highlightLeadId, fromSearch]);
+  }, [rows, highlightLeadId, fromSearch, location.state?.searchAt]);
 
   return (
     <Layout

@@ -448,6 +448,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { searchLeads } from "../services/NbdApi";
+import { toast } from "react-toastify";
 import "../assets/styles/Layout.css";
 
 function Layout({ children, breadcrumbs }) {
@@ -462,8 +463,12 @@ function Layout({ children, breadcrumbs }) {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(-1); // keyboard ↑/↓ selection
   const searchRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+  const searchSeqRef = useRef(0); // ignore old (slow) responses
+  const resultsListRef = useRef(null);
 
   // Close search results when clicking outside
   useEffect(() => {
@@ -496,9 +501,12 @@ function Layout({ children, breadcrumbs }) {
     }
 
     const trimmedValue = value.trim();
+    const seq = ++searchSeqRef.current; // every new keystroke cancels older results
 
     if (trimmedValue.length < 2) {
       setSearchResults([]);
+      setSearchTotal(0);
+      setActiveIndex(-1);
       setShowSearchResults(false);
       setIsSearching(false);
       return;
@@ -510,15 +518,21 @@ function Layout({ children, breadcrumbs }) {
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const response = await searchLeads(trimmedValue);
-        
+        if (seq !== searchSeqRef.current) return; // a newer search is running
+
         if (response.success) {
           setSearchResults(response.data || []);
+          setSearchTotal(response.total || (response.data || []).length);
+          setActiveIndex((response.data || []).length ? 0 : -1);
           setSearchError("");
         } else {
           setSearchError(response.error || "Search failed");
           setSearchResults([]);
+          setSearchTotal(0);
+          setActiveIndex(-1);
         }
       } catch (error) {
+        if (seq !== searchSeqRef.current) return;
         console.error("Search error:", error);
         
         if (error.response?.status === 400) {
@@ -531,16 +545,21 @@ function Layout({ children, breadcrumbs }) {
           setSearchError("Failed to search. Please try again.");
         }
         setSearchResults([]);
+        setSearchTotal(0);
+        setActiveIndex(-1);
       } finally {
-        setIsSearching(false);
+        if (seq === searchSeqRef.current) setIsSearching(false);
       }
-    }, 400);
+    }, 350);
   };
 
   // Clear search
   const clearSearch = () => {
+    searchSeqRef.current++; // drop any pending response
     setSearchTerm("");
     setSearchResults([]);
+    setSearchTotal(0);
+    setActiveIndex(-1);
     setShowSearchResults(false);
     setSearchError("");
     setIsSearching(false);
@@ -574,59 +593,52 @@ function Layout({ children, breadcrumbs }) {
     return colors[step] || colors[0];
   };
 
+  // ✅ Open the lead's page (route comes from backend) and highlight it in the table
   const handleResultClick = (result) => {
-    let route = "/dashboard"; 
-
-    if (result.sheetType === "Direct") {
-      const status = (result.stepStatus || "").toLowerCase().trim();
-
-      if (status === "call not picked") {
-        route = "/nbd-in/cnp";
-      } else {
-        const nbdRoutes = {
-          1: "/nbd-in/NBD_IN",
-          2: "/nbd-in/field-visit",
-          3: "/nbd-in/followup",
-          4: "/nbd-in/meeting",
-          5: "/nbd-in/booking",
-          0: "/nbd-in", 
-        };
-        route = nbdRoutes[result.currentStep] || "/nbd-in";
-      }
-    }
-    else if (result.sheetType === "Channel Partner") {
-      const canContact = result.canContact !== "No"; 
-
-      const cpCanRoutes = {
-        1: "/cp/can-contact/step-one",
-        2: "/cp/can-contact/step-two",
-        3: "/cp/can-contact/step-three",
-        4: "/cp/can-contact/step-four",
-        5: "/cp/can-contact/step-five",
-        0: "/cp",
-      };
-
-      const cpCannotRoutes = {
-        1: "/cp/cannot-contact/cp-step-one",
-        2: "/cp/cannot-contact/cp-step-two",
-        3: "/cp/cannot-contact/cp-step-three",
-        4: "/cp/cannot-contact/cp-step-four",
-        5: "/cp/cannot-contact/cp-step-five",
-        0: "/cp",
-      };
-
-      const cpRoutes = canContact ? cpCanRoutes : cpCannotRoutes;
-      route = cpRoutes[result.currentStep] || "/cp";
+    if (!result.route) {
+      toast.info(
+        `${result.customerName || result.uniqueId} — lead is closed (${result.stepStatus || "Completed"}), not in any dashboard.`,
+      );
+      return;
     }
 
     clearSearch();
-    navigate(route, {
+    navigate(result.route, {
       state: {
         highlightLeadId: result.uniqueId,
         fromSearch: true,
+        searchAt: Date.now(), // same lead searched again → highlight again
       },
     });
   };
+
+  // ✅ Keyboard: ↑ / ↓ to move, Enter to open, Esc to close
+  const handleSearchKeyDown = (e) => {
+    if (!showSearchResults || isSearching || searchResults.length === 0) {
+      if (e.key === "Escape") setShowSearchResults(false);
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1) % searchResults.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => (i <= 0 ? searchResults.length - 1 : i - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const r = searchResults[activeIndex >= 0 ? activeIndex : 0];
+      if (r) handleResultClick(r);
+    } else if (e.key === "Escape") {
+      setShowSearchResults(false);
+    }
+  };
+
+  // Keep the keyboard-selected item visible in the list
+  useEffect(() => {
+    if (activeIndex < 0 || !resultsListRef.current) return;
+    const el = resultsListRef.current.querySelector(`[data-result-index="${activeIndex}"]`);
+    if (el) el.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -652,9 +664,10 @@ function Layout({ children, breadcrumbs }) {
               <input
                 type="text"
                 className="universal-search-input"
-                placeholder="Search lead by name, contact, or ID (min 2 chars)..."
+                placeholder="Search lead by name, phone number or ID (min 2 chars)..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 onFocus={() => {
                   if (searchTerm.trim().length >= 2) {
                     setShowSearchResults(true);
@@ -697,11 +710,13 @@ function Layout({ children, breadcrumbs }) {
                   <>
                     <div className="search-results-header">
                       <span>
-                        <i className="bi bi-people"></i> Found {searchResults.length} lead
-                        {searchResults.length !== 1 ? "s" : ""}
+                        <i className="bi bi-people"></i> Found {searchTotal} lead
+                        {searchTotal !== 1 ? "s" : ""}
+                        {searchTotal > searchResults.length &&
+                          ` (showing top ${searchResults.length})`}
                       </span>
                     </div>
-                    <div className="search-results-list">
+                    <div className="search-results-list" ref={resultsListRef}>
                       {searchResults.map((result, index) => {
                         // ✅ Pass result.stepStatus here
                         const stepStyle = getStepBadgeStyle(result.currentStep, result.stepStatus);
@@ -710,7 +725,13 @@ function Layout({ children, breadcrumbs }) {
                           <div
                             key={`${result.sheetType}-${result.rowIndex}-${index}`}
                             className="search-result-item"
+                            data-result-index={index}
                             onClick={() => handleResultClick(result)}
+                            onMouseEnter={() => setActiveIndex(index)}
+                            style={{
+                              background: index === activeIndex ? "#eef2ff" : undefined,
+                              opacity: result.route ? 1 : 0.7,
+                            }}
                           >
                             <div className="result-main">
                               <div className="result-header">
@@ -739,8 +760,17 @@ function Layout({ children, breadcrumbs }) {
 
                             <div className="result-step-info">
                               <div
-                                className="step-badge"
+                                className="search-step-badge"
                                 style={{
+                                  // inline styles: CP Outgoing page has its own ".step-badge" (position:absolute)
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  padding: "5px 12px",
+                                  borderRadius: "20px",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  position: "static",
                                   background: stepStyle.bg,
                                   color: stepStyle.color,
                                   border: `1px solid ${stepStyle.border}`,

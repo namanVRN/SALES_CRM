@@ -92,20 +92,37 @@ function parseDate(dateStr) {
   return new Date(dateStr);
 }
 
-function getFSRCode(user) {
+// ✅ FSR users (USERS sheet → AssignedModule = "fsr"). Only these can mark Field Visit Done.
+const FSR_USERS = {
+  "bdm4@company.com": "BDM4",   // Ranjeet Gour
+  "bdm5@company.com": "BDM5",   // Amit Rohar
+  "bdm8@company.com": "BDM8",   // Ayush Dixit
+  "bdm9@company.com": "BDM9",   // Pravesh Kumar
+  "bdm11@company.com": "BDM11", // Kunal Kumar
+  "bdm12@company.com": "BDM12", // Anil Gour
+  "bdm13@company.com": "BDM13", // Ankit Patel
+  "bdm14@company.com": "BDM14", // Ajay Prajapati
+};
+const FSR_CODES = Object.values(FSR_USERS);
+
+function isAdminUser(user) {
+  return !!user && (user.role === "admin" || user.assignedModule === "all");
+}
+
+// Code that goes to AN column when Field Visit is marked Done.
+//  - FSR      → own code (BDM4, BDM5, ...)
+//  - Varun Sir → "Varun Sir" (does his own visits, sees them in After Field Visit)
+//  - Admin    → FSR selected in the popup dropdown
+//  - BDM (nbd) → null = not allowed to mark Done
+function getFSRCode(user, fsrFromAdmin) {
   if (!user) return null;
-  const m = {
-    "bdm4@company.com": "BDM4",
-    "bdm5@company.com": "BDM5",
-    "varun@company.com": "Varun Sir",
-    "bdm8@company.com": "BDM8",
-    "bdm9@company.com": "BDM9",
-    "bdm11@company.com": "BDM11",
-    "bdm12@company.com": "BDM12",
-     "bdm13@company.com": "BDM13",
-    "bdm14@company.com": "BDM14",
-  };
-  return m[user.email?.toLowerCase()] || null;
+  const email = user.email?.toLowerCase();
+  if (isAdminUser(user)) {
+    const v = typeof fsrFromAdmin === "string" ? fsrFromAdmin.trim() : "";
+    return FSR_CODES.includes(v) ? v : null;
+  }
+  if (email === "varun@company.com") return "Varun Sir";
+  return FSR_USERS[email] || null;
 }
 
 function getDoerTag(user) {
@@ -301,12 +318,29 @@ router.post("/update", async (req, res) => {
       notInterestedReason,
       leadInfo,
       actionType,
+      fsr,
     } = req.body;
 
     if (!rowIndex)
       return res
         .status(400)
         .json({ success: false, error: "Missing rowIndex" });
+
+    // ✅ Site visit Done → only FSR (or Admin with FSR selected / Varun Sir)
+    const isDoneRequest =
+      !(rescheduleDate && String(rescheduleDate).trim() !== "") &&
+      status !== "Not Interested" &&
+      status !== "Call Not Picked";
+    const doneFsrCode = isDoneRequest ? getFSRCode(req.user, fsr) : null;
+    if (isDoneRequest && !doneFsrCode) {
+      return res.status(403).json({
+        success: false,
+        error: "FSR_REQUIRED",
+        message: isAdminUser(req.user)
+          ? "Please select the FSR who did the site visit"
+          : "Only FSR can mark the site visit as Done",
+      });
+    }
 
         // ✅ NEW — Check current status BEFORE any update
     let currentStatus = "";
@@ -427,16 +461,11 @@ router.post("/update", async (req, res) => {
         values: [[status || "Done"]],
       });
 
-      // FSR code in AN column
-      if (req.user) {
-        const fsrCode = getFSRCode(req.user);
-        if (fsrCode) {
-          updates.push({
-            range: `'${NBD_SHEET_NAME}'!AN${rowIndex}`,
-            values: [[fsrCode]],
-          });
-        }
-      }
+      // ✅ FSR code in AN column (always set — checked above)
+      updates.push({
+        range: `'${NBD_SHEET_NAME}'!AN${rowIndex}`,
+        values: [[doneFsrCode]],
+      });
     }
 
     // Remarks — timestamp ke saath append

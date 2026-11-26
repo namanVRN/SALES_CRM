@@ -459,7 +459,7 @@ function NBDIN() {
       }
     }, 500);
   }
-}, [rows, highlightLeadId, fromSearch]);
+}, [rows, highlightLeadId, fromSearch, location.state?.searchAt]);
 
   const statusOptions = [
     { value: "Done", label: "Done", icon: "bi-check-circle", color: "#10b981" },

@@ -91,7 +91,7 @@ function CNPLeads() {
         }
       }, 500);
     }
-  }, [rows, highlightLeadId, fromSearch]);
+  }, [rows, highlightLeadId, fromSearch, location.state?.searchAt]);
 
   const filteredRows = rows.filter((row) => {
     if (filters.customerName) {

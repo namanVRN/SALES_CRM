@@ -216,7 +216,7 @@ function AfterFieldVisitFollowUp() {
         }
       }, 500);
     }
-  }, [rows, highlightLeadId, fromSearch]);
+  }, [rows, highlightLeadId, fromSearch, location.state?.searchAt]);
 
   const getDoerBadgeColor = (d) => {
     if (d === "BDM1")
