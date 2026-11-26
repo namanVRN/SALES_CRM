@@ -143,6 +143,7 @@ function getDoerTag(user) {
     "bdm14@company.com": "BDM14",
     "bdm15@company.com": "BDM15",
     "bdm16@company.com": "BDM16",
+    "bdm17@company.com": "BDM17",
     "varun@company.com": "Varun Sir",
     "mohan@company.com": "Mohan Sir",
   };
